@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 This experiment was created using PsychoPy3 Experiment Builder (v2024.2.4),
-    on Wed Jul 16 14:57:54 2025
+    on Wed Jul 16 15:19:49 2025
 If you publish work using this script the most relevant publication is:
 
     Peirce J, Gray JR, Simpson S, MacAskill M, Höchenberger R, Sogo H, Kastman E, Lindeløv JK. (2019) 
@@ -383,22 +383,25 @@ def run(expInfo, thisExp, win, globalClock=None, thisSession=None):
     # Run 'Begin Experiment' code from init_vars
     import random
     
-    # participant-level condition: 0 = noRegret, 1 = regretFirst30
+    # -------------------
+    # Participant-level settings
+    # -------------------
+    # 0 = No-Regret, 1 = Regret-First-30
     participant_cond = random.choice([0, 1])
     
-    # assign probs to left/up/right once
+    # Randomize prob assignment to LEFT / UP / RIGHT once for this participant
     PROBS = [0.2, 0.5, 0.7]
     random.shuffle(PROBS)
     prob_left, prob_up, prob_right = PROBS
     
-    # counters/state
-    trial_num = 0      # 1..60
-    points = 0         # last trial outcome
+    # State vars
+    trial_num = 0      # increments each main trial
+    points = 0         # outcome from last trial
     
-    # log header info
+    # Put mapping in expInfo so it is saved with the data file header
     expInfo['participant_cond'] = participant_cond
-    expInfo['prob_left'] = prob_left
-    expInfo['prob_up'] = prob_up
+    expInfo['prob_left']  = prob_left
+    expInfo['prob_up']    = prob_up
     expInfo['prob_right'] = prob_right
     
     # --- Initialize components for Routine "Fixation" ---
@@ -966,6 +969,18 @@ def run(expInfo, thisExp, win, globalClock=None, thisSession=None):
         if key_resp_1.keys != None:  # we had a response
             trials.addData('key_resp_1.rt', key_resp_1.rt)
             trials.addData('key_resp_1.duration', key_resp_1.duration)
+        # Run 'End Routine' code from choice_logic
+        # Log decision
+        thisExp.addData('trial_num', trial_num)
+        thisExp.addData('participant_cond', participant_cond)
+        
+        # chosen key + RT
+        choice_key = key_resp_1.keys
+        choice_rt  = key_resp_1.rt
+        thisExp.addData('choice_key', choice_key)
+        thisExp.addData('choice_rt', choice_rt)
+        
+        # We'll fill in choice_prob & points in Feedback (after outcome known)
         # the Routine "Choice" was not non-slip safe, so reset the non-slip timer
         routineTimer.reset()
         
@@ -979,8 +994,11 @@ def run(expInfo, thisExp, win, globalClock=None, thisSession=None):
         continueRoutine = True
         # update component parameters for each repeat
         # Run 'Begin Routine' code from code_feedback
-        k = getattr(key_resp_1, "keys", None)
+        # Which key was chosen on that trial?
+        k = choice_key  # from Choice End Routine variable (defined above)
+        # (if you prefer, use: k = getattr(key_resp_1, 'keys', None))
         
+        # Map key to prob + apple position
         if k == 'left':
             apple_pos = (-300, 0)
             tree_prob = prob_left
@@ -992,8 +1010,9 @@ def run(expInfo, thisExp, win, globalClock=None, thisSession=None):
             tree_prob = prob_right
         else:
             apple_pos = (0, 0)
-            tree_prob = 0.0
+            tree_prob = 0.0  # no response / unexpected key
         
+        # Outcome
         if random.random() < float(tree_prob):
             apple_img = 'images/apple-high.png'
             points = 1
@@ -1001,12 +1020,18 @@ def run(expInfo, thisExp, win, globalClock=None, thisSession=None):
             apple_img = 'images/apple-neg.png'
             points = 0
         
+        # Update display stim
         appleImage.setPos(apple_pos)
         appleImage.setImage(apple_img)
         
-        thisExp.addData('choice_key', k)
+        # Log prob + outcome
         thisExp.addData('choice_prob', tree_prob)
         thisExp.addData('points', points)
+        
+        # Also helpful to repeat mapping (participant-level constants) each row
+        thisExp.addData('prob_left', prob_left)
+        thisExp.addData('prob_up', prob_up)
+        thisExp.addData('prob_right', prob_right)
         appleImage.setImage(apple_img)
         # store start times for Feedback
         Feedback.tStartRefresh = win.getFutureFlipTime(clock=globalClock)
@@ -1136,11 +1161,16 @@ def run(expInfo, thisExp, win, globalClock=None, thisSession=None):
         regret_key.rt = []
         _regret_key_allKeys = []
         # Run 'Begin Routine' code from regretlogic
-        # show rating only if: regret cond, trial <=30, and last outcome 0
+        # Show regret question only if:
+        # participant_cond == 1 (Regret-First-30) AND
+        # trial_num <= 30 AND
+        # points == 0 (just lost)
         skip_regret = not (participant_cond == 1 and trial_num <= 30 and points == 0)
         if skip_regret:
             continueRoutine = False
+            # We'll pre-log NA so each trial row has something
             thisExp.addData('regret_rating', 'NA')
+            thisExp.addData('regret_rt', 'NA')
         # store start times for RegretRating
         RegretRating.tStartRefresh = win.getFutureFlipTime(clock=globalClock)
         RegretRating.tStart = globalClock.getTime(format='float')
@@ -1212,20 +1242,6 @@ def run(expInfo, thisExp, win, globalClock=None, thisSession=None):
                 waitOnFlip = True
                 win.callOnFlip(regret_key.clock.reset)  # t=0 on next screen flip
                 win.callOnFlip(regret_key.clearEvents, eventType='keyboard')  # clear events on next screen flip
-            
-            # if regret_key is stopping this frame...
-            if regret_key.status == STARTED:
-                # is it time to stop? (based on global clock, using actual start)
-                if tThisFlipGlobal > regret_key.tStartRefresh + 1.0-frameTolerance:
-                    # keep track of stop time/frame for later
-                    regret_key.tStop = t  # not accounting for scr refresh
-                    regret_key.tStopRefresh = tThisFlipGlobal  # on global time
-                    regret_key.frameNStop = frameN  # exact frame index
-                    # add timestamp to datafile
-                    thisExp.timestampOnFlip(win, 'regret_key.stopped')
-                    # update status
-                    regret_key.status = FINISHED
-                    regret_key.status = FINISHED
             if regret_key.status == STARTED and not waitOnFlip:
                 theseKeys = regret_key.getKeys(keyList=['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'], ignoreKeys=["escape"], waitRelease=False)
                 _regret_key_allKeys.extend(theseKeys)
@@ -1292,6 +1308,7 @@ def run(expInfo, thisExp, win, globalClock=None, thisSession=None):
             else:
                 rating = int(k)
             thisExp.addData('regret_rating', rating)
+            thisExp.addData('regret_rt', regret_key.rt)
         # the Routine "RegretRating" was not non-slip safe, so reset the non-slip timer
         routineTimer.reset()
         
