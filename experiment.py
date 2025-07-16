@@ -1,204 +1,175 @@
-# ALWAYS MAKE SURE .VENV IS ACTIVATED AND SET TO PYTHON 3.10 BEFORE RUNNING ANYTHING
-# make sure to use Python 3.10; pip install psychopy, pylink
-# make sure current directory is set to regret_eyetracking 
-# the current code is a minimal example; eyetracking parts are commented out because they won't work without the full setup
-# need to figure out what to do about the regret slider--having a mouse cursor is not ideal since we have eye tracking; the slider is clunky as is. maybe a 1-10 scale could work
-# also for now the condition is being set manually; in the future will randomize
-# also don't need condition 2, this is just a leftover from the old version of the experiment
+"""
+regret_experiment.py
+Run locally in the PsychoPy desktop app (no Pavlovia needed).
 
-from psychopy import visual, core, event, gui, data, logging
-#import pylink
-#from pylink import EyeLink, openGraphicsEx
-import random
-import os
+Folder layout
+├─ regret_experiment.py            ← THIS FILE
+├─ instructions.xlsx               ← 1 col named 'image' (paths to instruction PNGs)
+├─ conditions.xlsx                 ← per-trial variables (see below)
+├─ images/
+│   instructions01.png  tree-1.png  tree-2.png  tree-3.png  default.png  …
+└─ data/   (created automatically)
+"""
 
-# === Setup experiment info ===
-exp_info = {"Participant": "", "Condition (1-4)": 2}
-dlg = gui.DlgFromDict(dictionary=exp_info)
+from psychopy import core, visual, event, data, gui, logging
+from pathlib import Path
+import numpy as np
+
+# ------------------------ 1  EXPERIMENT INFO DIALOG --------------------------
+expName = "regret_experiment"
+expInfo = {"participant": ""}
+dlg = gui.DlgFromDict(expInfo, title=expName)
 if not dlg.OK:
     core.quit()
 
-if not os.path.exists("data"):
-    os.makedirs("data")
+# ------------------------ 2  WINDOW & BASIC STIMULI --------------------------
+win = visual.Window(
+    size=[1280, 720],
+    fullscr=True,
+    units="height",
+    color="black"
+)
+fixcross = visual.TextStim(win, text="+", height=0.05)
+blank_txt = visual.TextStim(win, text="")
 
-filename = f"data/{exp_info['Participant']}_fruit"
-condition = int(exp_info["Condition (1-4)"])
-thisExp = data.ExperimentHandler(dataFileName=filename)
+# tree positions (L-C-R)
+tree_positions = [(-0.5, 0), (0.0, 0), (0.5, 0)]
+tree_files = [f"images/tree-{i}.png" for i in (1, 2, 3)]
+trees = [
+    visual.ImageStim(win, image=f, pos=p, size=(0.35, 0.35))
+    for f, p in zip(tree_files, tree_positions)
+]
 
-# === Setup Eyelink ===
-# tracker = EyeLink()
-# openGraphicsEx(pylink.getEYELINK().graphics)
-# tracker.openDataFile('test.edf')
-# tracker.sendCommand("file_event_filter = LEFT,RIGHT,FIXATION,SACCADE,BLINK,MESSAGE,BUTTON")
-# tracker.sendCommand("file_sample_data = LEFT,RIGHT,GAZE,AREA,GAZERES,STATUS")
+# feedback apple (image & position will be updated each trial)
+apple = visual.ImageStim(win, image="images/apple-high.png", size=(0.28, 0.28))
 
-# === Setup window ===
-win = visual.Window([1280, 800], color='white', units='pix', fullscr=False)
-win.mouseVisible = False
-
-# === Stimuli ===
-tree_files = ['images/tree-1.png', 'images/tree-2.png', 'images/tree-3.png']
-fruit_files = {'ripe': 'images/apple-high.png', 'rotten': 'images/apple-neg.png'}
-tree_stims = [visual.ImageStim(win, image=f, size=(200, 300), pos=(-300 + i*300, 0)) for i, f in enumerate(tree_files)]
-fruit_stim = visual.ImageStim(win, size=(150, 150), pos=(0, 0))
-text = visual.TextStim(win, text='', color='black', height=32, wrapWidth=1000)
-slider = visual.Slider(
-    win=win,
-    units='pix',           # same units as the window
-    size=(800, 40),        # 800 px wide, 40 px tall
-    pos=(0, -200),         # ~¼ of the way down the screen
-    ticks=(0, 25, 50, 75, 100),
-    labels=["Not at all", "", "", "", "Very much"],
-    granularity=1,
-    style='rating',        # gives the classic “line with a handle”
-    color='black',         # track colour
-    fillColor='black',     # handle fill
-    borderColor='black'    # handle border
+rating_prompt = visual.TextStim(
+    win,
+    text=(
+        "How much do you regret this choice?\n"
+        "Press 1 – 0  (0 = 10)\n\n"
+        "1                        5                       0(10)\n"
+        "<------------------------------------------------->\n"
+        "Not very much                          Very much"
+    ),
+    height=0.045,
+    wrapWidth=1.2,
 )
 
-# === Instructions ===
-instruction_files = [
-    'images/instructions01.png', 'images/instructions02.png', 'images/instructions03.png',
-    'images/instructionsBonus.png', 'images/instructions04.png',
-    'images/instructions05.png', 'images/instructions06.png'
-]
-instruction_files += {
-    1: ['images/instructions08.png'],
-    2: ['images/instructions072.png'],
-    3: ['images/instructions073.png'],
-    4: ['images/instructions074.png']
-}[condition]
+end_msg = visual.TextStim(win, height=0.06)
 
-for img in instruction_files:
-    inst = visual.ImageStim(win, image=img, size=(900, 600))
-    inst.draw()
+# ------------------------ 3  HANDY FUNCTIONS ---------------------------------
+def flush():
+    """Clear keybuffer and flip once (black screen)."""
+    event.clearEvents()
     win.flip()
-    event.waitKeys(keyList=['space'])
 
+def show(stim, dur=None, keyList=None):
+    """Draw *stim* until duration expires or a key in keyList is pressed."""
+    timer = core.Clock()
+    flush()
+    while True:
+        stim.draw()
+        win.flip()
+        if keyList:
+            keys = event.getKeys(keyList=keyList)
+            if keys:
+                return keys[0], timer.getTime()
+        if dur is not None and timer.getTime() >= dur:
+            return None, timer.getTime()
 
-# === Begin Experiment Instruction ===
-text.text = "Press space to begin the experiment."
-text.draw()
-win.flip()
-event.waitKeys(keyList=['space'])
+def safe_quit():
+    if "escape" in event.getKeys():
+        win.close(); core.quit()
 
-# === Experiment variables ===
-tree_probs = [[0.7, 0.3], [0.2, 0.8], [0.5, 0.5]]
-random.shuffle(tree_probs)  
+# ------------------------ 4  INSTRUCTIONS LOOP --------------------------------
+instr_trials = data.TrialHandler(
+    nReps=1,
+    method="random",
+    trialList=data.importConditions("instructions.xlsx"),
+    name="instructions"
+)
+
+for instr in instr_trials:
+    img = visual.ImageStim(win, image=instr["image"])
+    show(img, keyList=["space"])  # space to advance
+    safe_quit()
+
+# ------------------------ 5  MAIN TRIAL LOOP ---------------------------------
+trials = data.TrialHandler(
+    nReps=1,
+    method="sequential",
+    trialList=data.importConditions("conditions.xlsx"),
+    name="trials"
+)
+
 total_points = 0
-trial_counter = 0
-total_multiple_choice_trials = 0
-max_trials = 60
+regret_ratings = []
 
-# === Start Eyelink recording ===
-# tracker.setOfflineMode()
-# core.wait(0.1)
-# tracker.startRecording(1, 1, 1, 1)
+for trial in trials:
+    # 5.1 Fixation ----------------------------------------------------------------
+    show(fixcross, dur=1.0)
+    safe_quit()
 
-# === Trial loop ===
-for i in range(max_trials):
-    trial_counter += 1
-
-    for t in tree_stims:
+    # 5.2 Choice -------------------------------------------------------------------
+    for t in trees:
         t.draw()
     win.flip()
-    # tracker.sendMessage(f"TRIAL_{i+1}_START")
 
-    keys = event.waitKeys(keyList=['left', 'up', 'right', 'escape'])
-    if 'escape' in keys:
-        break
-    choice = {'left': 0, 'up': 1, 'right': 2}[keys[0]]
-    chosen_prob = tree_probs[choice][0]
-    outcome = 'ripe' if random.random() < chosen_prob else 'rotten'
-    points = 1 if outcome == 'ripe' else 0
+    key, rt = show(blank_txt, keyList=["left", "up", "right", "escape"])
+    if key == "escape":
+        safe_quit()
+    choice_idx = {"left": 0, "up": 1, "right": 2}[key]
+
+    # store choice
+    trials.addData("choice_key", key)
+    trials.addData("choice_rt", rt)
+    trials.addData("choice_idx", choice_idx)
+
+    # 5.3 Determine outcome & feedback --------------------------------------------
+    # Spreadsheet should contain at least:
+    #  - 'apple_img' (image path)
+    #  - 'apple_x', 'apple_y'  (floats, pos in height units)
+    #  - 'points'  (numeric reward)
+    img_file = trial.get("apple_img", "images/apple-high.png")
+    apple.image = img_file
+    apple.pos = (trial.get("apple_x", 0.0), trial.get("apple_y", -0.2))
+    points = trial.get("points", 0)
     total_points += points
 
-    # Show fruit
-    fruit_stim.image = fruit_files[outcome]
-    fruit_stim.pos = (-300 + choice * 300, 100)
-    fruit_stim.draw()
-    win.flip()
-    # tracker.sendMessage(f"CHOICE_{choice}_OUTCOME_{outcome}")
-    core.wait(0.5)
+    trials.addData("points", points)
+    trials.addData("apple_img_shown", img_file)
 
-    # Conditional regret
-    show_slider = False
-    if condition == 2 and points == 0:
-        show_slider = True
-    elif condition == 3 and points == 0 and i < 30:
-        show_slider = True
-    elif condition == 4 and points == 0 and i >= 30:
-        show_slider = True
+    show(apple, dur=1.0)
+    safe_quit()
 
-    # -------------- REGRET RATING  (keyboard only) --------------
-    if show_slider:
-        win.mouseVisible = False          # keep cursor hidden
+    # 5.4 Regret rating ------------------------------------------------------------
+    key, _ = show(rating_prompt, keyList=list("1234567890"))
+    rating_val = 10 if key == "0" else int(key)
+    regret_ratings.append(rating_val)
+    trials.addData("regret_rating", rating_val)
 
-        slider.reset()
-        n_ticks = len(slider.ticks)
+    # 5.5 ITI ----------------------------------------------------------------------
+    show(blank_txt, dur=1.0)
+    safe_quit()
 
-        current_idx = n_ticks // 2       
-        slider.markerPos = (current_idx - (n_ticks-1)/2) / ((n_ticks-1)/2)
+# ------------------------ 6  END-OF-EXPERIMENT SCREEN -------------------------
+avg_regret = np.mean(regret_ratings) if regret_ratings else np.nan
+end_msg.text = (
+    f"Experiment complete!\n\n"
+    f"Total points : {total_points}\n"
+    f"Average regret : {avg_regret:.2f}\n\n"
+    f"Press any key to exit."
+)
+show(end_msg, keyList=None)
+event.waitKeys()
 
-        text.text = (
-            "How much do you regret this choice?\n"
-            "← / →  to move   •   Space / Enter  to confirm"
-        )
+# ------------------------ 7  SAVE & QUIT --------------------------------------
+data_dir = Path("data")
+data_dir.mkdir(exist_ok=True)
+outfile = data_dir / f"{expInfo['participant']}_{expName}.csv"
+trials.saveAsWideText(outfile, delim=",")
+logging.flush()
 
-        rating_done = False
-        start_time  = core.getTime()      
-
-        while not rating_done:
-            text.draw()
-            slider.draw()
-            win.flip()
-
-            for key in event.getKeys():
-                if key == "left" and current_idx > 0:
-                    current_idx -= 1
-                elif key == "right" and current_idx < n_ticks - 1:
-                    current_idx += 1
-                elif key in ("space", "return", "enter"):
-                    slider.rating = slider.ticks[current_idx]
-                    slider.rt = core.getTime() - start_time
-                    rating_done = True
-
-                slider.markerPos = (current_idx - (n_ticks-1)/2) / ((n_ticks-1)/2)
-
-        thisExp.addData('regret_rating', slider.rating)
-    else:
-        thisExp.addData('regret_rating', 'NA')
-    # -------------------------------------------------------------
-
-    thisExp.addData('trial', i+1)
-    thisExp.addData('choice', choice)
-    thisExp.addData('outcome', outcome)
-    thisExp.addData('points', points)
-    thisExp.addData('total_points', total_points)
-    thisExp.addData('condition', condition)
-    thisExp.nextEntry()
-
-    # Mid-point break
-    if i == 29 and condition in [3, 4]:
-        text.text = "Part 1 complete. Press space to continue."
-        text.draw()
-        win.flip()
-        event.waitKeys(keyList=['space'])
-
-# === Stop Eyelink ===
-# tracker.stopRecording()
-# core.wait(0.1)
-# tracker.setOfflineMode()
-# tracker.closeDataFile()
-# edf_name = f"{exp_info['Participant']}.edf"
-# tracker.receiveDataFile('test.edf', edf_name)
-# tracker.close()
-
-# === Save and exit ===
-thisExp.saveAsWideText(f"{filename}.csv")
-text.text = "Thank you for participating!\n\nTotal Points: {}".format(total_points)
-text.draw()
-win.flip()
-core.wait(3)
 win.close()
 core.quit()
