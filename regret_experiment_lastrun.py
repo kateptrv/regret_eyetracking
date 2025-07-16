@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 This experiment was created using PsychoPy3 Experiment Builder (v2024.2.4),
-    on Wed Jul 16 15:19:49 2025
+    on Wed Jul 16 15:25:50 2025
 If you publish work using this script the most relevant publication is:
 
     Peirce J, Gray JR, Simpson S, MacAskill M, Höchenberger R, Sogo H, Kastman E, Lindeløv JK. (2019) 
@@ -132,7 +132,7 @@ def setupData(expInfo, dataDir=None):
     thisExp = data.ExperimentHandler(
         name=expName, version='',
         extraInfo=expInfo, runtimeInfo=None,
-        originPath='/Users/katepetrova/Library/CloudStorage/GoogleDrive-kpetrova@stanford.edu/Shared drives/SPL_Kate Petrova/regret_eyetracking/regret_experiment_lastrun.py',
+        originPath='/Users/katepetrova/Library/CloudStorage/GoogleDrive-kpetrova@stanford.edu/Shared drives/SPL_Kate Petrova/regret_eyetracking/regret_eyetracking/regret_experiment_lastrun.py',
         savePickle=True, saveWideText=True,
         dataFileName=dataDir + os.sep + filename, sortColumns='time'
     )
