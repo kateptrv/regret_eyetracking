@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 This experiment was created using PsychoPy3 Experiment Builder (v2024.2.4),
-    on Tue Jul 22 15:35:24 2025
+    on Tue Jul 29 11:27:16 2025
 If you publish work using this script the most relevant publication is:
 
     Peirce J, Gray JR, Simpson S, MacAskill M, Höchenberger R, Sogo H, Kastman E, Lindeløv JK. (2019) 
@@ -37,6 +37,7 @@ from psychopy.hardware import keyboard
 apple_pos = (0, 0)
 apple_img = 'images/apple-neg.png'
 points = 0
+total_points = 0
 tree_prob = 0.0
 import random
 # --- Setup global variables (available in all functions) ---
@@ -132,7 +133,7 @@ def setupData(expInfo, dataDir=None):
     thisExp = data.ExperimentHandler(
         name=expName, version='',
         extraInfo=expInfo, runtimeInfo=None,
-        originPath='/Users/katepetrova/Library/CloudStorage/GoogleDrive-kpetrova@stanford.edu/Shared drives/SPL_Kate Petrova/regret_eyetracking/regret_eyetracking/regret_experiment_lastrun.py',
+        originPath='/Users/katepetrova/Library/CloudStorage/GoogleDrive-kpetrova@stanford.edu/Shared drives/SPL_Kate Petrova/regret_eyetracking/regret_eyetracking/regret_experiment.py',
         savePickle=True, saveWideText=True,
         dataFileName=dataDir + os.sep + filename, sortColumns='time'
     )
@@ -201,7 +202,7 @@ def setupWindow(expInfo=None, win=None):
         win = visual.Window(
             size=_winSize, fullscr=_fullScr, screen=0,
             winType='pyglet', allowGUI=False, allowStencil=False,
-            monitor='testMonitor', color=[0,0,0], colorSpace='rgb',
+            monitor='testMonitor', color=[1.0000, 1.0000, 1.0000], colorSpace='rgb',
             backgroundImage='', backgroundFit='none',
             blendMode='avg', useFBO=True,
             units='height',
@@ -209,7 +210,7 @@ def setupWindow(expInfo=None, win=None):
         )
     else:
         # if we have a window, just set the attributes which are safe to set
-        win.color = [0,0,0]
+        win.color = [1.0000, 1.0000, 1.0000]
         win.colorSpace = 'rgb'
         win.backgroundImage = ''
         win.backgroundFit = 'none'
@@ -397,6 +398,7 @@ def run(expInfo, thisExp, win, globalClock=None, thisSession=None):
     # State vars
     trial_num = 0      # increments each main trial
     points = 0         # outcome from last trial
+    total_points = 0   # cumulative points
     
     # Put mapping in expInfo so it is saved with the data file header
     expInfo['participant_cond'] = participant_cond
@@ -409,7 +411,7 @@ def run(expInfo, thisExp, win, globalClock=None, thisSession=None):
         text='+',
         font='Arial',
         pos=(0, 0), draggable=False, height=0.05, wrapWidth=None, ori=0.0, 
-        color='white', colorSpace='rgb', opacity=None, 
+        color='black', colorSpace='rgb', opacity=None, 
         languageStyle='LTR',
         depth=0.0);
     
@@ -418,7 +420,7 @@ def run(expInfo, thisExp, win, globalClock=None, thisSession=None):
         win=win,
         name='tree1_img', units='pix', 
         image='images/tree-1.png', mask=None, anchor='center',
-        ori=0.0, pos=(-300, 0), draggable=False, size=None,
+        ori=0.0, pos=(-300, 0), draggable=False, size=[200, 200],
         color=[1,1,1], colorSpace='rgb', opacity=None,
         flipHoriz=False, flipVert=False,
         texRes=128.0, interpolate=True, depth=0.0)
@@ -426,7 +428,7 @@ def run(expInfo, thisExp, win, globalClock=None, thisSession=None):
         win=win,
         name='tree2_img', units='pix', 
         image='images/tree-2.png', mask=None, anchor='center',
-        ori=0.0, pos=(0, 0), draggable=False, size=None,
+        ori=0.0, pos=(0, 0), draggable=False, size=[200, 200],
         color=[1,1,1], colorSpace='rgb', opacity=None,
         flipHoriz=False, flipVert=False,
         texRes=128.0, interpolate=True, depth=-1.0)
@@ -434,33 +436,89 @@ def run(expInfo, thisExp, win, globalClock=None, thisSession=None):
         win=win,
         name='tree3_img', units='pix', 
         image='images/tree-3.png', mask=None, anchor='center',
-        ori=0.0, pos=(300, 0), draggable=False, size=None,
+        ori=0.0, pos=(300, 0), draggable=False, size=[200, 200],
         color=[1,1,1], colorSpace='rgb', opacity=None,
         flipHoriz=False, flipVert=False,
         texRes=128.0, interpolate=True, depth=-2.0)
     key_resp_1 = keyboard.Keyboard(deviceName='key_resp_1')
+    pointsText1 = visual.TextStim(win=win, name='pointsText1',
+        text='',
+        font='Arial',
+        pos=(0.8, 0.8), draggable=False, height=0.05, wrapWidth=None, ori=0.0, 
+        color='white', colorSpace='rgb', opacity=None, 
+        languageStyle='LTR',
+        depth=-5.0);
+    # Run 'Begin Experiment' code from points1_code
+    
+    
     
     # --- Initialize components for Routine "Feedback" ---
     appleImage = visual.ImageStim(
         win=win,
         name='appleImage', units='pix', 
         image='default.png', mask=None, anchor='center',
-        ori=0.0, pos=(0, 0), draggable=False, size=None,
+        ori=0.0, pos=(0, 200), draggable=False, size=[150, 150],
         color=[1,1,1], colorSpace='rgb', opacity=None,
         flipHoriz=False, flipVert=False,
         texRes=128.0, interpolate=True, depth=-1.0)
+    pointsText2 = visual.TextStim(win=win, name='pointsText2',
+        text='',
+        font='Arial',
+        pos=(0.8, 0.8), draggable=False, height=0.05, wrapWidth=None, ori=0.0, 
+        color='black', colorSpace='rgb', opacity=None, 
+        languageStyle='LTR',
+        depth=-2.0);
+    tree1 = visual.ImageStim(
+        win=win,
+        name='tree1', units='pix', 
+        image='images/tree-1.png', mask=None, anchor='center',
+        ori=0.0, pos=(-300, 0), draggable=False, size=[200, 200],
+        color=[1,1,1], colorSpace='rgb', opacity=None,
+        flipHoriz=False, flipVert=False,
+        texRes=128.0, interpolate=True, depth=-4.0)
+    tree2 = visual.ImageStim(
+        win=win,
+        name='tree2', units='pix', 
+        image='images/tree-2.png', mask=None, anchor='center',
+        ori=0.0, pos=(0, 0), draggable=False, size=[200, 200],
+        color=[1,1,1], colorSpace='rgb', opacity=None,
+        flipHoriz=False, flipVert=False,
+        texRes=128.0, interpolate=True, depth=-5.0)
+    tree3 = visual.ImageStim(
+        win=win,
+        name='tree3', units='pix', 
+        image='images/tree-3.png', mask=None, anchor='center',
+        ori=0.0, pos=(300, 0), draggable=False, size=[200, 200],
+        color=[1,1,1], colorSpace='rgb', opacity=None,
+        flipHoriz=False, flipVert=False,
+        texRes=128.0, interpolate=True, depth=-6.0)
     
     # --- Initialize components for Routine "RegretRating" ---
     text = visual.TextStim(win=win, name='text',
-        text='How much do you regret this choice? Press a number key from 1-0, with 0 representing 10.\n\n1                      5                   0(10)       \n<---------------------------------------------->\nNot                                         Very\nvery                                        Much\nmuch',
+        text='How much do you regret this choice? Press a number key from 1-9.',
         font='Arial',
         pos=(0, 0), draggable=False, height=0.05, wrapWidth=None, ori=0.0, 
-        color='white', colorSpace='rgb', opacity=None, 
+        color='black', colorSpace='rgb', opacity=None, 
         languageStyle='LTR',
         depth=0.0);
+    regret_scale = visual.ImageStim(
+        win=win,
+        name='regret_scale', 
+        image='images/RegretRatingScale (1).png', mask=None, anchor='center',
+        ori=0.0, pos=(0, 0), draggable=False, size=(0.5, 0.5),
+        color='black', colorSpace='rgb', opacity=None,
+        flipHoriz=False, flipVert=False,
+        texRes=128.0, interpolate=True, depth=-1.0)
     regret_key = keyboard.Keyboard(deviceName='regret_key')
     # Run 'Begin Experiment' code from regretlogic
     skip_regret = False
+    pointsText3 = visual.TextStim(win=win, name='pointsText3',
+        text='',
+        font='Arial',
+        pos=(0.8, 0.8), draggable=False, height=0.05, wrapWidth=None, ori=0.0, 
+        color='white', colorSpace='rgb', opacity=None, 
+        languageStyle='LTR',
+        depth=-4.0);
     
     # --- Initialize components for Routine "ITI" ---
     blank_screen = visual.TextStim(win=win, name='blank_screen',
@@ -472,9 +530,14 @@ def run(expInfo, thisExp, win, globalClock=None, thisSession=None):
         depth=0.0);
     
     # --- Initialize components for Routine "EndScreen" ---
-    # Run 'Begin Experiment' code from end_experiment
-    
-    
+    end_display = visual.TextStim(win=win, name='end_display',
+        text=f"Thanks for participating!\nYou earned {total_points} points."
+    ,
+        font='Arial',
+        pos=(0, 0), draggable=False, height=0.05, wrapWidth=None, ori=0.0, 
+        color='white', colorSpace='rgb', opacity=None, 
+        languageStyle='LTR',
+        depth=-1.0);
     
     # create some handy timers
     
@@ -666,6 +729,16 @@ def run(expInfo, thisExp, win, globalClock=None, thisSession=None):
         Fixation.status = NOT_STARTED
         continueRoutine = True
         # update component parameters for each repeat
+        # Run 'Begin Routine' code from jitter_code1
+        # Jitter range (seconds)
+        fixMin = 0.5
+        fixMax = 1.5
+        
+        # Uniform jitter
+        fixDur = random.uniform(fixMin, fixMax)
+        
+        # (optional) tidy precision
+        fixDur = round(fixDur, 3)
         # store start times for Fixation
         Fixation.tStartRefresh = win.getFutureFlipTime(clock=globalClock)
         Fixation.tStart = globalClock.getTime(format='float')
@@ -784,7 +857,7 @@ def run(expInfo, thisExp, win, globalClock=None, thisSession=None):
         # create an object to store info about Routine Choice
         Choice = data.Routine(
             name='Choice',
-            components=[tree1_img, tree2_img, tree3_img, key_resp_1],
+            components=[tree1_img, tree2_img, tree3_img, key_resp_1, pointsText1],
         )
         Choice.status = NOT_STARTED
         continueRoutine = True
@@ -923,6 +996,43 @@ def run(expInfo, thisExp, win, globalClock=None, thisSession=None):
                     # a response ends the routine
                     continueRoutine = False
             
+            # *pointsText1* updates
+            
+            # if pointsText1 is starting this frame...
+            if pointsText1.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+                # keep track of start time/frame for later
+                pointsText1.frameNStart = frameN  # exact frame index
+                pointsText1.tStart = t  # local t and not account for scr refresh
+                pointsText1.tStartRefresh = tThisFlipGlobal  # on global time
+                win.timeOnFlip(pointsText1, 'tStartRefresh')  # time at next scr refresh
+                # add timestamp to datafile
+                thisExp.timestampOnFlip(win, 'pointsText1.started')
+                # update status
+                pointsText1.status = STARTED
+                pointsText1.setAutoDraw(True)
+            
+            # if pointsText1 is active this frame...
+            if pointsText1.status == STARTED:
+                # update params
+                pointsText1.setText(f"Total points: {total_points}", log=False)
+            
+            # if pointsText1 is stopping this frame...
+            if pointsText1.status == STARTED:
+                # is it time to stop? (based on global clock, using actual start)
+                if tThisFlipGlobal > pointsText1.tStartRefresh + 1.0-frameTolerance:
+                    # keep track of stop time/frame for later
+                    pointsText1.tStop = t  # not accounting for scr refresh
+                    pointsText1.tStopRefresh = tThisFlipGlobal  # on global time
+                    pointsText1.frameNStop = frameN  # exact frame index
+                    # add timestamp to datafile
+                    thisExp.timestampOnFlip(win, 'pointsText1.stopped')
+                    # update status
+                    pointsText1.status = FINISHED
+                    pointsText1.setAutoDraw(False)
+            # Run 'Each Frame' code from points1_code
+            pointsText1.text = f"Total points: {total_points}"
+            
+            
             # check for quit (typically the Esc key)
             if defaultKeyboard.getKeys(keyList=["escape"]):
                 thisExp.status = FINISHED
@@ -988,7 +1098,7 @@ def run(expInfo, thisExp, win, globalClock=None, thisSession=None):
         # create an object to store info about Routine Feedback
         Feedback = data.Routine(
             name='Feedback',
-            components=[appleImage],
+            components=[appleImage, pointsText2, tree1, tree2, tree3],
         )
         Feedback.status = NOT_STARTED
         continueRoutine = True
@@ -1000,13 +1110,13 @@ def run(expInfo, thisExp, win, globalClock=None, thisSession=None):
         
         # Map key to prob + apple position
         if k == 'left':
-            apple_pos = (-300, 0)
+            apple_pos = (-300, 200)
             tree_prob = prob_left
         elif k == 'up':
-            apple_pos = (0, 0)
+            apple_pos = (0, 200)
             tree_prob = prob_up
         elif k == 'right':
-            apple_pos = (300, 0)
+            apple_pos = (300, 200)
             tree_prob = prob_right
         else:
             apple_pos = (0, 0)
@@ -1032,6 +1142,19 @@ def run(expInfo, thisExp, win, globalClock=None, thisSession=None):
         thisExp.addData('prob_left', prob_left)
         thisExp.addData('prob_up', prob_up)
         thisExp.addData('prob_right', prob_right)
+        
+        # highlight the chosen tree this trial
+        tree1_img_fb.size = [200, 400]
+        tree2_img_fb.size = [200, 400]
+        tree3_img_fb.size = [200, 400]
+        
+        if choice_key == 'left':
+            tree1_img_fb.size = [220, 220]
+        elif choice_key == 'up':
+            tree2_img_fb.size = [220, 220]
+        elif choice_key == 'right':
+            tree3_img_fb.size = [220, 220]
+        
         appleImage.setImage(apple_img)
         # store start times for Feedback
         Feedback.tStartRefresh = win.getFutureFlipTime(clock=globalClock)
@@ -1100,6 +1223,145 @@ def run(expInfo, thisExp, win, globalClock=None, thisSession=None):
                     appleImage.status = FINISHED
                     appleImage.setAutoDraw(False)
             
+            # *pointsText2* updates
+            
+            # if pointsText2 is starting this frame...
+            if pointsText2.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+                # keep track of start time/frame for later
+                pointsText2.frameNStart = frameN  # exact frame index
+                pointsText2.tStart = t  # local t and not account for scr refresh
+                pointsText2.tStartRefresh = tThisFlipGlobal  # on global time
+                win.timeOnFlip(pointsText2, 'tStartRefresh')  # time at next scr refresh
+                # add timestamp to datafile
+                thisExp.timestampOnFlip(win, 'pointsText2.started')
+                # update status
+                pointsText2.status = STARTED
+                pointsText2.setAutoDraw(True)
+            
+            # if pointsText2 is active this frame...
+            if pointsText2.status == STARTED:
+                # update params
+                pointsText2.setText(f"Total points: {total_points}", log=False)
+            
+            # if pointsText2 is stopping this frame...
+            if pointsText2.status == STARTED:
+                # is it time to stop? (based on global clock, using actual start)
+                if tThisFlipGlobal > pointsText2.tStartRefresh + 1.0-frameTolerance:
+                    # keep track of stop time/frame for later
+                    pointsText2.tStop = t  # not accounting for scr refresh
+                    pointsText2.tStopRefresh = tThisFlipGlobal  # on global time
+                    pointsText2.frameNStop = frameN  # exact frame index
+                    # add timestamp to datafile
+                    thisExp.timestampOnFlip(win, 'pointsText2.stopped')
+                    # update status
+                    pointsText2.status = FINISHED
+                    pointsText2.setAutoDraw(False)
+            # Run 'Each Frame' code from points2_code
+            pointsText2.text = f"Total points: {total_points}"
+            
+            
+            # *tree1* updates
+            
+            # if tree1 is starting this frame...
+            if tree1.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+                # keep track of start time/frame for later
+                tree1.frameNStart = frameN  # exact frame index
+                tree1.tStart = t  # local t and not account for scr refresh
+                tree1.tStartRefresh = tThisFlipGlobal  # on global time
+                win.timeOnFlip(tree1, 'tStartRefresh')  # time at next scr refresh
+                # add timestamp to datafile
+                thisExp.timestampOnFlip(win, 'tree1.started')
+                # update status
+                tree1.status = STARTED
+                tree1.setAutoDraw(True)
+            
+            # if tree1 is active this frame...
+            if tree1.status == STARTED:
+                # update params
+                pass
+            
+            # if tree1 is stopping this frame...
+            if tree1.status == STARTED:
+                # is it time to stop? (based on global clock, using actual start)
+                if tThisFlipGlobal > tree1.tStartRefresh + 2.0-frameTolerance:
+                    # keep track of stop time/frame for later
+                    tree1.tStop = t  # not accounting for scr refresh
+                    tree1.tStopRefresh = tThisFlipGlobal  # on global time
+                    tree1.frameNStop = frameN  # exact frame index
+                    # add timestamp to datafile
+                    thisExp.timestampOnFlip(win, 'tree1.stopped')
+                    # update status
+                    tree1.status = FINISHED
+                    tree1.setAutoDraw(False)
+            
+            # *tree2* updates
+            
+            # if tree2 is starting this frame...
+            if tree2.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+                # keep track of start time/frame for later
+                tree2.frameNStart = frameN  # exact frame index
+                tree2.tStart = t  # local t and not account for scr refresh
+                tree2.tStartRefresh = tThisFlipGlobal  # on global time
+                win.timeOnFlip(tree2, 'tStartRefresh')  # time at next scr refresh
+                # add timestamp to datafile
+                thisExp.timestampOnFlip(win, 'tree2.started')
+                # update status
+                tree2.status = STARTED
+                tree2.setAutoDraw(True)
+            
+            # if tree2 is active this frame...
+            if tree2.status == STARTED:
+                # update params
+                pass
+            
+            # if tree2 is stopping this frame...
+            if tree2.status == STARTED:
+                # is it time to stop? (based on global clock, using actual start)
+                if tThisFlipGlobal > tree2.tStartRefresh + 2.0-frameTolerance:
+                    # keep track of stop time/frame for later
+                    tree2.tStop = t  # not accounting for scr refresh
+                    tree2.tStopRefresh = tThisFlipGlobal  # on global time
+                    tree2.frameNStop = frameN  # exact frame index
+                    # add timestamp to datafile
+                    thisExp.timestampOnFlip(win, 'tree2.stopped')
+                    # update status
+                    tree2.status = FINISHED
+                    tree2.setAutoDraw(False)
+            
+            # *tree3* updates
+            
+            # if tree3 is starting this frame...
+            if tree3.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+                # keep track of start time/frame for later
+                tree3.frameNStart = frameN  # exact frame index
+                tree3.tStart = t  # local t and not account for scr refresh
+                tree3.tStartRefresh = tThisFlipGlobal  # on global time
+                win.timeOnFlip(tree3, 'tStartRefresh')  # time at next scr refresh
+                # add timestamp to datafile
+                thisExp.timestampOnFlip(win, 'tree3.started')
+                # update status
+                tree3.status = STARTED
+                tree3.setAutoDraw(True)
+            
+            # if tree3 is active this frame...
+            if tree3.status == STARTED:
+                # update params
+                pass
+            
+            # if tree3 is stopping this frame...
+            if tree3.status == STARTED:
+                # is it time to stop? (based on global clock, using actual start)
+                if tThisFlipGlobal > tree3.tStartRefresh + 2.0-frameTolerance:
+                    # keep track of stop time/frame for later
+                    tree3.tStop = t  # not accounting for scr refresh
+                    tree3.tStopRefresh = tThisFlipGlobal  # on global time
+                    tree3.frameNStop = frameN  # exact frame index
+                    # add timestamp to datafile
+                    thisExp.timestampOnFlip(win, 'tree3.stopped')
+                    # update status
+                    tree3.status = FINISHED
+                    tree3.setAutoDraw(False)
+            
             # check for quit (typically the Esc key)
             if defaultKeyboard.getKeys(keyList=["escape"]):
                 thisExp.status = FINISHED
@@ -1139,6 +1401,9 @@ def run(expInfo, thisExp, win, globalClock=None, thisSession=None):
         Feedback.tStop = globalClock.getTime(format='float')
         Feedback.tStopRefresh = tThisFlipGlobal
         thisExp.addData('Feedback.stopped', Feedback.tStop)
+        # Run 'End Routine' code from code_feedback
+        total_points += points
+        
         # using non-slip timing so subtract the expected duration of this Routine (unless ended on request)
         if Feedback.maxDurationReached:
             routineTimer.addTime(-Feedback.maxDuration)
@@ -1151,7 +1416,7 @@ def run(expInfo, thisExp, win, globalClock=None, thisSession=None):
         # create an object to store info about Routine RegretRating
         RegretRating = data.Routine(
             name='RegretRating',
-            components=[text, regret_key],
+            components=[text, regret_scale, regret_key, pointsText3],
         )
         RegretRating.status = NOT_STARTED
         continueRoutine = True
@@ -1224,6 +1489,40 @@ def run(expInfo, thisExp, win, globalClock=None, thisSession=None):
                 # update params
                 pass
             
+            # *regret_scale* updates
+            
+            # if regret_scale is starting this frame...
+            if regret_scale.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+                # keep track of start time/frame for later
+                regret_scale.frameNStart = frameN  # exact frame index
+                regret_scale.tStart = t  # local t and not account for scr refresh
+                regret_scale.tStartRefresh = tThisFlipGlobal  # on global time
+                win.timeOnFlip(regret_scale, 'tStartRefresh')  # time at next scr refresh
+                # add timestamp to datafile
+                thisExp.timestampOnFlip(win, 'regret_scale.started')
+                # update status
+                regret_scale.status = STARTED
+                regret_scale.setAutoDraw(True)
+            
+            # if regret_scale is active this frame...
+            if regret_scale.status == STARTED:
+                # update params
+                pass
+            
+            # if regret_scale is stopping this frame...
+            if regret_scale.status == STARTED:
+                # is it time to stop? (based on global clock, using actual start)
+                if tThisFlipGlobal > regret_scale.tStartRefresh + 1.0-frameTolerance:
+                    # keep track of stop time/frame for later
+                    regret_scale.tStop = t  # not accounting for scr refresh
+                    regret_scale.tStopRefresh = tThisFlipGlobal  # on global time
+                    regret_scale.frameNStop = frameN  # exact frame index
+                    # add timestamp to datafile
+                    thisExp.timestampOnFlip(win, 'regret_scale.stopped')
+                    # update status
+                    regret_scale.status = FINISHED
+                    regret_scale.setAutoDraw(False)
+            
             # *regret_key* updates
             waitOnFlip = False
             
@@ -1243,7 +1542,7 @@ def run(expInfo, thisExp, win, globalClock=None, thisSession=None):
                 win.callOnFlip(regret_key.clock.reset)  # t=0 on next screen flip
                 win.callOnFlip(regret_key.clearEvents, eventType='keyboard')  # clear events on next screen flip
             if regret_key.status == STARTED and not waitOnFlip:
-                theseKeys = regret_key.getKeys(keyList=['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'], ignoreKeys=["escape"], waitRelease=False)
+                theseKeys = regret_key.getKeys(keyList=['1', '2', '3', '4', '5', '6', '7', '8', '9'], ignoreKeys=["escape"], waitRelease=False)
                 _regret_key_allKeys.extend(theseKeys)
                 if len(_regret_key_allKeys):
                     regret_key.keys = _regret_key_allKeys[-1].name  # just the last key pressed
@@ -1251,6 +1550,43 @@ def run(expInfo, thisExp, win, globalClock=None, thisSession=None):
                     regret_key.duration = _regret_key_allKeys[-1].duration
                     # a response ends the routine
                     continueRoutine = False
+            
+            # *pointsText3* updates
+            
+            # if pointsText3 is starting this frame...
+            if pointsText3.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+                # keep track of start time/frame for later
+                pointsText3.frameNStart = frameN  # exact frame index
+                pointsText3.tStart = t  # local t and not account for scr refresh
+                pointsText3.tStartRefresh = tThisFlipGlobal  # on global time
+                win.timeOnFlip(pointsText3, 'tStartRefresh')  # time at next scr refresh
+                # add timestamp to datafile
+                thisExp.timestampOnFlip(win, 'pointsText3.started')
+                # update status
+                pointsText3.status = STARTED
+                pointsText3.setAutoDraw(True)
+            
+            # if pointsText3 is active this frame...
+            if pointsText3.status == STARTED:
+                # update params
+                pointsText3.setText(f"Total points: {total_points}", log=False)
+            
+            # if pointsText3 is stopping this frame...
+            if pointsText3.status == STARTED:
+                # is it time to stop? (based on global clock, using actual start)
+                if tThisFlipGlobal > pointsText3.tStartRefresh + 1.0-frameTolerance:
+                    # keep track of stop time/frame for later
+                    pointsText3.tStop = t  # not accounting for scr refresh
+                    pointsText3.tStopRefresh = tThisFlipGlobal  # on global time
+                    pointsText3.frameNStop = frameN  # exact frame index
+                    # add timestamp to datafile
+                    thisExp.timestampOnFlip(win, 'pointsText3.stopped')
+                    # update status
+                    pointsText3.status = FINISHED
+                    pointsText3.setAutoDraw(False)
+            # Run 'Each Frame' code from points3_code
+            pointsText3.text = f"Total points: {total_points}"
+            
             
             # check for quit (typically the Esc key)
             if defaultKeyboard.getKeys(keyList=["escape"]):
@@ -1321,6 +1657,16 @@ def run(expInfo, thisExp, win, globalClock=None, thisSession=None):
         ITI.status = NOT_STARTED
         continueRoutine = True
         # update component parameters for each repeat
+        # Run 'Begin Routine' code from jitter_code2
+        # Jitter range (seconds)
+        fixMin = 0.5
+        fixMax = 1.5
+        
+        # Uniform jitter
+        fixDur = random.uniform(fixMin, fixMax)
+        
+        # (optional) tidy precision
+        fixDur = round(fixDur, 3)
         # store start times for ITI
         ITI.tStartRefresh = win.getFutureFlipTime(clock=globalClock)
         ITI.tStart = globalClock.getTime(format='float')
@@ -1377,7 +1723,7 @@ def run(expInfo, thisExp, win, globalClock=None, thisSession=None):
             # if blank_screen is stopping this frame...
             if blank_screen.status == STARTED:
                 # is it time to stop? (based on global clock, using actual start)
-                if tThisFlipGlobal > blank_screen.tStartRefresh + 1.0-frameTolerance:
+                if tThisFlipGlobal > blank_screen.tStartRefresh + 1-frameTolerance:
                     # keep track of stop time/frame for later
                     blank_screen.tStop = t  # not accounting for scr refresh
                     blank_screen.tStopRefresh = tThisFlipGlobal  # on global time
@@ -1446,48 +1792,27 @@ def run(expInfo, thisExp, win, globalClock=None, thisSession=None):
     # create an object to store info about Routine EndScreen
     EndScreen = data.Routine(
         name='EndScreen',
-        components=[],
+        components=[end_display],
     )
     EndScreen.status = NOT_STARTED
     continueRoutine = True
     # update component parameters for each repeat
     # Run 'Begin Routine' code from end_experiment
+    # ---- EndScreen Begin Routine ----
     import numpy as np
     
-    # Try to get columns from the trials loop if available
-    try:
-        ratings = trials.data.get('regret_rating', [])
-    except Exception:
-        # fallback to experiment-wide data (if loop object unavailable)
-        ratings = thisExp.data.get('regret_rating', [])
+    ratings = trials.data.get('regret_rating', [])  # already exists now
+    ratings = [float(r) for r in ratings if r not in ('NA', '', None)]
+    avg_regret = round(np.mean(ratings), 2) if ratings else 'N/A'
     
-    # clean & convert
-    ratings_clean = []
-    for r in ratings:
-        if r not in ('NA', '', None):
-            try:
-                ratings_clean.append(float(r))
-            except Exception:
-                pass
-    avg_regret = round(np.mean(ratings_clean), 2) if ratings_clean else 'N/A'
+    pts = trials.data.get('points', [])
+    pts = [float(p) for p in pts if p not in ('', None)]
+    total_points = int(np.sum(pts)) if pts else 0
     
-    # points
-    try:
-        pts = trials.data.get('points', [])
-    except Exception:
-        pts = thisExp.data.get('points', [])
-    pts_clean = []
-    for p in pts:
-        if p not in ('', None):
-            try:
-                pts_clean.append(float(p))
-            except Exception:
-                pass
-    total_points = int(np.sum(pts_clean)) if pts_clean else 0
-    
-    # store so they end up in the output row
     thisExp.addData('avg_regret', avg_regret)
     thisExp.addData('total_points', total_points)
+    
+    end_display.text = f"Thanks for participating!\nYou earned {total_points} points."
     # store start times for EndScreen
     EndScreen.tStartRefresh = win.getFutureFlipTime(clock=globalClock)
     EndScreen.tStart = globalClock.getTime(format='float')
@@ -1510,13 +1835,47 @@ def run(expInfo, thisExp, win, globalClock=None, thisSession=None):
     
     # --- Run Routine "EndScreen" ---
     EndScreen.forceEnded = routineForceEnded = not continueRoutine
-    while continueRoutine:
+    while continueRoutine and routineTimer.getTime() < 1.0:
         # get current time
         t = routineTimer.getTime()
         tThisFlip = win.getFutureFlipTime(clock=routineTimer)
         tThisFlipGlobal = win.getFutureFlipTime(clock=None)
         frameN = frameN + 1  # number of completed frames (so 0 is the first frame)
         # update/draw components on each frame
+        
+        # *end_display* updates
+        
+        # if end_display is starting this frame...
+        if end_display.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+            # keep track of start time/frame for later
+            end_display.frameNStart = frameN  # exact frame index
+            end_display.tStart = t  # local t and not account for scr refresh
+            end_display.tStartRefresh = tThisFlipGlobal  # on global time
+            win.timeOnFlip(end_display, 'tStartRefresh')  # time at next scr refresh
+            # add timestamp to datafile
+            thisExp.timestampOnFlip(win, 'end_display.started')
+            # update status
+            end_display.status = STARTED
+            end_display.setAutoDraw(True)
+        
+        # if end_display is active this frame...
+        if end_display.status == STARTED:
+            # update params
+            pass
+        
+        # if end_display is stopping this frame...
+        if end_display.status == STARTED:
+            # is it time to stop? (based on global clock, using actual start)
+            if tThisFlipGlobal > end_display.tStartRefresh + 1.0-frameTolerance:
+                # keep track of stop time/frame for later
+                end_display.tStop = t  # not accounting for scr refresh
+                end_display.tStopRefresh = tThisFlipGlobal  # on global time
+                end_display.frameNStop = frameN  # exact frame index
+                # add timestamp to datafile
+                thisExp.timestampOnFlip(win, 'end_display.stopped')
+                # update status
+                end_display.status = FINISHED
+                end_display.setAutoDraw(False)
         
         # check for quit (typically the Esc key)
         if defaultKeyboard.getKeys(keyList=["escape"]):
@@ -1557,9 +1916,14 @@ def run(expInfo, thisExp, win, globalClock=None, thisSession=None):
     EndScreen.tStop = globalClock.getTime(format='float')
     EndScreen.tStopRefresh = tThisFlipGlobal
     thisExp.addData('EndScreen.stopped', EndScreen.tStop)
+    # using non-slip timing so subtract the expected duration of this Routine (unless ended on request)
+    if EndScreen.maxDurationReached:
+        routineTimer.addTime(-EndScreen.maxDuration)
+    elif EndScreen.forceEnded:
+        routineTimer.reset()
+    else:
+        routineTimer.addTime(-1.000000)
     thisExp.nextEntry()
-    # the Routine "EndScreen" was not non-slip safe, so reset the non-slip timer
-    routineTimer.reset()
     
     # mark experiment as finished
     endExperiment(thisExp, win=win)

@@ -8,7 +8,7 @@
     <Param val="u'data/%s_%s_%s' % (expInfo['participant'], expName, expInfo['date'])" valType="code" updates="None" name="Data filename"/>
     <Param val="True" valType="bool" updates="None" name="Enable Escape"/>
     <Param val="Thank you for your patience." valType="str" updates="None" name="End Message"/>
-    <Param val="{'participant':'f&quot;{randint(0, 999999):06.0f}&quot;', 'session':'001'}" valType="code" updates="None" name="Experiment info"/>
+    <Param val="{'participant': 'f&quot;{randint(0, 999999):06.0f}&quot;', 'session': '001'}" valType="code" updates="None" name="Experiment info"/>
     <Param val="True" valType="bool" updates="None" name="Force stereo"/>
     <Param val="True" valType="bool" updates="None" name="Full-screen window"/>
     <Param val="" valType="str" updates="None" name="HTML path"/>
@@ -44,7 +44,7 @@
     <Param val="PUPIL_AREA" valType="str" updates="None" name="elPupilMeasure"/>
     <Param val="1000" valType="num" updates="None" name="elSampleRate"/>
     <Param val="False" valType="bool" updates="None" name="elSimMode"/>
-    <Param val="RIGHT_EYE" valType="str" updates="None" name="elTrackEyes"/>
+    <Param val="BOTH" valType="str" updates="None" name="elTrackEyes"/>
     <Param val="PUPIL_CR_TRACKING" valType="str" updates="None" name="elTrackingMode"/>
     <Param val="regret_experiment" valType="str" updates="None" name="expName"/>
     <Param val="on Sync" valType="str" updates="None" name="exportHTML"/>
@@ -56,7 +56,7 @@
     <Param val="ioHub" valType="str" updates="None" name="keyboardBackend"/>
     <Param val="info" valType="code" updates="None" name="logging level"/>
     <Param val="True" valType="bool" updates="None" name="measureFrameRate"/>
-    <Param val="MIDDLE_BUTTON" valType="list" updates="None" name="mgBlink"/>
+    <Param val="('MIDDLE_BUTTON',)" valType="list" updates="None" name="mgBlink"/>
     <Param val="CONTINUOUS" valType="str" updates="None" name="mgMove"/>
     <Param val="0.5" valType="num" updates="None" name="mgSaccade"/>
     <Param val="neon.local" valType="str" updates="None" name="plCompanionAddress"/>
@@ -415,6 +415,23 @@
         <Param val="# Log decision&amp;#10;thisExp.addData('trial_num', trial_num)&amp;#10;thisExp.addData('participant_cond', participant_cond)&amp;#10;&amp;#10;# chosen key + RT&amp;#10;choice_key = key_resp_1.keys&amp;#10;choice_rt  = key_resp_1.rt&amp;#10;thisExp.addData('choice_key', choice_key)&amp;#10;thisExp.addData('choice_rt', choice_rt)&amp;#10;&amp;#10;# We'll fill in choice_prob &amp; points in Feedback (after outcome known)" valType="extendedCode" updates="constant" name="End Routine"/>
         <Param val="False" valType="bool" updates="None" name="disabled"/>
         <Param val="choice_logic" valType="code" updates="None" name="name"/>
+      </CodeComponent>
+      <CodeComponent name="eyetracking" plugin="None">
+        <Param val="" valType="extendedCode" updates="constant" name="Before Experiment"/>
+        <Param val="" valType="extendedCode" updates="constant" name="Before JS Experiment"/>
+        <Param val="" valType="extendedCode" updates="constant" name="Begin Experiment"/>
+        <Param val="" valType="extendedCode" updates="constant" name="Begin JS Experiment"/>
+        <Param val="" valType="extendedCode" updates="constant" name="Begin JS Routine"/>
+        <Param val="" valType="extendedCode" updates="constant" name="Begin Routine"/>
+        <Param val="Auto-&gt;JS" valType="str" updates="None" name="Code Type"/>
+        <Param val="gaze = eyetracker.getPos()  # (x, y)&amp;#10;thisExp.addData('gaze_x', gaze[0])&amp;#10;thisExp.addData('gaze_y', gaze[1])" valType="extendedCode" updates="constant" name="Each Frame"/>
+        <Param val="gaze = eyetracker.getPos();&amp;#10;psychoJS.experiment.addData(&quot;gaze_x&quot;, gaze[0]);&amp;#10;psychoJS.experiment.addData(&quot;gaze_y&quot;, gaze[1]);&amp;#10;" valType="extendedCode" updates="constant" name="Each JS Frame"/>
+        <Param val="" valType="extendedCode" updates="constant" name="End Experiment"/>
+        <Param val="" valType="extendedCode" updates="constant" name="End JS Experiment"/>
+        <Param val="" valType="extendedCode" updates="constant" name="End JS Routine"/>
+        <Param val="" valType="extendedCode" updates="constant" name="End Routine"/>
+        <Param val="True" valType="bool" updates="None" name="disabled"/>
+        <Param val="eyetracking" valType="code" updates="None" name="name"/>
       </CodeComponent>
     </Routine>
     <Routine name="Feedback">
