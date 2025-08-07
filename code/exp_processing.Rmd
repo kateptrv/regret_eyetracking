@@ -1,0 +1,112 @@
+---
+title: "exp_processing"
+author: "Kate Petrova"
+date: "2025-08-05"
+output: html_document
+---
+
+# Setup
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(include = TRUE)
+
+if(!suppressWarnings(require(pacman))){install.packages("pacman");library("pacman")}
+p_load(tidyverse, tidyr, dplyr, ggplot2, stats, sjPlot, readr, ggpubr, patchwork, lubridate, ggthemr, ggdist, showtext, eyelinkReader, usethis)
+```
+
+# Processing
+
+```{r}
+# list csv files
+csv_files <- list.files("../experiment/data", pattern = "\\.csv$", full.names = TRUE)
+
+# get PIDs from csv files
+get_pid <- function(path) {
+  str_extract(basename(path), "^\\d{6}")
+}
+
+data_exp_raw <- map_dfr(csv_files, function(path) {
+  df <- read_csv(path, show_col_types = FALSE)
+
+  df$pid <- get_pid(path)
+
+  df
+})
+
+# removing unnecessary variables; renaming, creating new variables
+data_exp_processed <- data_exp_raw |>
+  select(pid, `participant_cond...77`, trial_num, choice_key, choice_rt, choice_prob, points, regret_rating, regret_rt, `prob_left...78`, `prob_up...79`, `prob_right...80`) |>
+  rename(
+    condition = `participant_cond...77`,
+    trial_index = trial_num,
+    choice = choice_key,
+    regret = regret_rating,
+    tree_1 = `prob_left...78`,
+    tree_2 = `prob_up...79`,
+    tree_3 = `prob_right...80`
+  ) |>
+  filter(!is.na(trial_index)) |>
+  mutate(choice = case_when(
+    choice == "left" ~ 1,
+    choice == "up" ~ 2,
+    choice == "right" ~ 3
+  ),
+  condition = ifelse(condition == 0, "control", "regret")) |>
+  mutate(totalpoints = cumsum(points)) |>
+  mutate(final_points = last(totalpoints, order_by = trial_index)) |>
+  mutate(tree_best = case_when(
+    tree_1 == 0.7 ~ 1,
+    tree_2 == 0.7 ~ 2,
+    tree_3 == 0.7 ~ 3),
+        tree_medium = case_when(
+    tree_1 == 0.5 ~ 1,
+    tree_2 == 0.5 ~ 2,
+    tree_3 == 0.5 ~ 3),
+        tree_worst = case_when(
+    tree_1 == 0.2 ~ 1,
+    tree_2 == 0.2 ~ 2,
+    tree_3 == 0.2 ~ 3)) |>
+  mutate(choice_goodbad = case_when(
+    choice == tree_best ~ "best",
+    choice == tree_medium ~ "medium",
+    choice == tree_worst ~ "worst"
+  )) |>
+  mutate(pid = as.numeric(pid)) 
+```
+
+```{r}
+# check that all looks right
+View(data_exp_processed)
+```
+
+```{r}
+# export dataset
+write_csv(data_exp_processed, "../data/data_exp_processed.csv")
+```
+
+# Merge behavior with eye tracking
+
+```{r}
+data_eye_processed <- read_csv("../data/data_eye_processed.csv")
+```
+
+
+```{r}
+data_merged <-
+  data_exp_processed |>
+  group_by(pid, trial_index) |>
+  inner_join(data_eye_processed, by = c("pid", "trial_index")) |>
+  ungroup() |>
+  relocate(type, .after = trial_index) 
+  
+```
+
+```{r}
+# check that the dataset looks as expected
+View(data_merged)
+```
+
+```{r}
+# export merged dataset
+write_csv(data_merged, "../data/data_merged.csv")
+```

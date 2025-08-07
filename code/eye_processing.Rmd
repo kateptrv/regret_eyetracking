@@ -11,7 +11,7 @@ output: html_document
 knitr::opts_chunk$set(include = TRUE)
 
 if(!suppressWarnings(require(pacman))){install.packages("pacman");library("pacman")}
-p_load(tidyverse, tidyr, dplyr, ggplot2, stats, sjPlot, readr, ggpubr, patchwork, lubridate, ggthemr, ggdist, showtext, eyelinkReader, usethis, data.table, png, grid)
+p_load(tidyverse, tidyr, dplyr, ggplot2, stats, sjPlot, readr, ggpubr, patchwork, lubridate, ggthemr, ggdist, showtext, eyelinkReader, usethis, data.table, png, grid, purrr)
 ```
 
 ```{r}
@@ -52,7 +52,7 @@ sac  <- as.data.table(test$saccades)
 fix  <- as.data.table(test$fixations)
 
 msg <- msg[type == "MESSAGEEVENT" & grepl("^(FIX|CHOICE|FEEDBACK|REGRET)", message),
-           .(trial, msg_time = sttime_rel, label = message)]
+           .(msg_time = sttime_rel, label = message)]
 
 msg <- msg |>
     mutate(
@@ -88,7 +88,7 @@ sac_labeled <- msg[sac, on = .(start), roll = TRUE]
 sac_fix_labeled <- sac_labeled[fix, on = .(start), roll = TRUE]
 
 sac_fix_labeled <- sac_fix_labeled |>
-  select(-c(trial, label, start, end, i.end, i.end.1)) |>
+  select(-c(label, start, end, i.end, i.end.1)) |>
   filter(!is.na(msg_time)) 
 
 
@@ -138,19 +138,86 @@ ggplot(aes(x = sac_genx, y = sac_geny, size = sac_duration, color = type)) +
 
 ```
 
-# Whole sample -- IGNORE FOR NOW
-```{r}
-edf_files <- list.files("../data", pattern = "\\.EDF$", full.names = TRUE)
+# Whole sample
 
-# extract participant IDs
+```{r}
+# get a list of all EDF files
+edf_files <- list.files("../experiment/data", pattern = "\\.EDF$", full.names = TRUE)
+
+# extract participant IDs from file names
 get_pid <- function(path) {
-  stringr::str_extract(basename(path), "^\\d{6}")
+  str_extract(basename(path), "^\\d{6}")
 }
 
-edf_data_list <- edf_files |>
-  set_names(get_pid) |>
-  map(~ read_edf(.x))
+# function to process the files one by one, just like the single-participant code above but with a few additions
+process_edf <- function(path) {
+  pid <- get_pid(path) # getting participant id
+  
+  test <- read_edf(path)  
+  
+  msg <- as.data.table(test$events)
+  msg <- msg[
+    type == "MESSAGEEVENT" & grepl("^(FIX|CHOICE|FEEDBACK|REGRET)", message),
+    .(msg_time = sttime_rel, label = message)
+  ]
 
+  msg <- msg |>
+    mutate(
+      trial_num = as.numeric(str_extract(label, "\\d+")),
+      type = case_when(
+        grepl("^FIX", label) ~ "fixation",
+        grepl("^CHOICE", label) ~ "choice",
+        grepl("^FEEDBACK", label) ~ "feedback",
+        grepl("^REGRET", label) ~ "regret",
+        TRUE ~ NA_character_
+      )
+    ) |>
+    arrange(msg_time) |>
+    fill(type, trial_num, .direction = "down")
+
+  sac <- as.data.table(test$saccades) |>
+    select(sttime_rel, entime_rel, gstx, gsty, genx, geny, duration) |>
+    rename_with(~ paste0("sac_", .))
+
+  fix <- as.data.table(test$fixations) |>
+    select(sttime_rel, entime_rel, gstx, gsty, genx, geny, duration) |>
+    rename_with(~ paste0("fix_", .))
+
+  sac[, `:=`(start = sac_sttime_rel, end = sac_entime_rel)]
+  msg[, `:=`(start = msg_time, end = msg_time)]
+  fix[, `:=`(start = fix_sttime_rel, end = fix_entime_rel)]
+
+  setkey(msg, start, end)
+  setkey(sac, start, end)
+  setkey(fix, start, end)
+
+  # joining all in one go here because of errors
+  labeled <- fix[sac[msg, roll = TRUE], roll = TRUE]
+
+  sac_fix_labeled <- sac_fix_labeled |>
+    filter(!is.na(msg_time)) |>
+    mutate(pid = pid)
+
+  return(sac_fix_labeled)
+}
+
+# apply the function the all edf files
+data_eye_processed <- rbindlist(lapply(edf_files, process_edf), fill = TRUE) |>
+  rename(trial_index = trial_num) |>
+  relocate(pid, .before = trial_index) |>
+  select(-msg_time) |>
+  mutate(pid = as.numeric(pid))
+
+``` 
+```{r}
+# check that the dataset looks as expected
+View(data_eye_processed)
+```
+
+```{r}
+# export! we will use this dataset to merge it with the behavioral dataset (from exp_processing)
+
+write_csv(data_eye_processed, "../data/data_eye_processed.csv")
 ```
 
 
