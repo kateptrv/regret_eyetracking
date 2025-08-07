@@ -1,0 +1,185 @@
+---
+title: "analyses"
+author: "Kate Petrova"
+date: "2025-08-07"
+output: html_document
+---
+
+# Setup
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(include = TRUE)
+
+if(!suppressWarnings(require(pacman))){install.packages("pacman");library("pacman")}
+p_load(tidyverse, tidyr, dplyr, ggplot2, stats, sjPlot, readr, ggpubr, patchwork, lubridate, ggthemr, ggdist, ggpubr, showtext, usethis, data.table, png, grid, purrr)
+```
+
+```{r}
+data <- read_csv("../data/data_merged.csv", show_col_types = FALSE)
+```
+
+# Analyses and visulizations
+
+## Choice gaze dynamics
+
+### Sanity check that people are looking at what they are choosing
+
+```{r}
+# plotting fixations by choice
+data |>
+  filter(type == "choice") |>
+  mutate(choice = case_when(
+    choice == 1 ~ "left",
+    choice == 2 ~ "middle",
+    choice == 3 ~ "right"
+  )) |>
+  ggplot(aes(x = fix_genx, y = fix_geny, size = fix_duration, color = type)) +
+  coord_cartesian(xlim = c(0, 1728), ylim = c(0, 1080), expand = FALSE) +
+  scale_y_reverse() +
+  geom_point(aes(564, 540), shape = 18, size = 4, color = "black") +
+  geom_point(aes(864, 540), shape = 18, size = 4, color = "black") +
+  geom_point(aes(1164, 540), shape = 18, size = 4, color = "black") +
+  geom_point(alpha = 0.5) +
+  labs(
+    title = "Fixations by choice") +
+  facet_wrap(~ choice) +
+  theme(legend.position = "none", 
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank())
+```
+```{r}
+# plotting saccades by choice
+data |>
+  filter(type == "choice") |>
+  mutate(choice = case_when(
+    choice == 1 ~ "left",
+    choice == 2 ~ "middle",
+    choice == 3 ~ "right"
+  )) |>
+  ggplot(aes(x = sac_genx, y = sac_geny, size = sac_duration, color = type)) +
+  coord_cartesian(xlim = c(0, 1728), ylim = c(0, 1080), expand = FALSE) +
+  scale_y_reverse() +
+  geom_point(aes(564, 540), shape = 18, size = 4, color = "black") +
+  geom_point(aes(864, 540), shape = 18, size = 4, color = "black") +
+  geom_point(aes(1164, 540), shape = 18, size = 4, color = "black") +
+  geom_point(alpha = 0.5) +
+  labs(
+    title = "Fixations by choice") +
+  facet_wrap(~ choice) +
+  theme(legend.position = "none", 
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank())
+```
+### Goodness of choice gaze dynamics
+
+```{r}
+# fixations
+data_merged |> 
+  filter(type == "feedback") |>
+  ggplot(aes(x = choice_goodbad, y = fix_duration, color = choice_goodbad, fill = choice_goodbad)) +
+  
+  # stat_dots(
+  #   side = "right",  
+  #   justification = 0,  
+  #   binwidth = 0.25,
+  #   linewidth = 0.5,
+  #   alpha = 1
+  # ) +
+  
+  stat_summary(
+    fun.data = mean_cl_boot, conf.int = .95, B = 5000,
+    geom = "pointrange", linewidth = 1, size = 1,
+    shape = 21 
+  ) +
+  
+  labs(x = "Outcome", y = "Fixation time", title = "Outcome looking time by goodness of choice") +
+  theme(legend.position = "none") +
+  theme(panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank())
+```
+
+```{r}
+# saccades
+data_merged |> 
+  filter(type == "feedback") |>
+  ggplot(aes(x = choice_goodbad, y = sac_duration, color = choice_goodbad, fill = choice_goodbad)) +
+  
+  # stat_dots(
+  #   side = "right",  
+  #   justification = 0,  
+  #   binwidth = 0.25,
+  #   linewidth = 0.5,
+  #   alpha = 1
+  # ) +
+  
+  stat_summary(
+    fun.data = mean_cl_boot, conf.int = .95, B = 5000,
+    geom = "pointrange", linewidth = 1, size = 1,
+    shape = 21 
+  ) +
+  
+  labs(x = "Outcome", y = "Saccades", title = "Saccades by goodness of choice") +
+  theme(legend.position = "none") +
+  theme(panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank())
+```
+
+## Outcome gaze dynamics
+
+```{r}
+# fixations
+data_merged |>
+  filter(type == "feedback") |>
+  mutate(points = case_when(
+    points == 0 ~ "rotten",
+    points == 1 ~ "ripe")) |>
+  ggplot(aes(x = points, y = fix_duration, color = points, fill = points)) +
+  
+  # stat_dots(
+  #   side = "right",  
+  #   justification = 0,  
+  #   binwidth = 0.25,
+  #   linewidth = 0.5,
+  #   alpha = 1
+  # ) +
+  
+  stat_summary(
+    fun.data = mean_cl_boot, conf.int = .95, B = 5000,
+    geom = "pointrange", linewidth = 1, size = 1,
+    shape = 21 
+  ) +
+  
+  labs(x = "Outcome", y = "Fixation time") +
+  theme(legend.position = "none") +
+  theme(panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank())
+```
+
+```{r}
+# saccades
+data_merged |>
+  filter(type == "feedback") |>
+  mutate(points = case_when(
+    points == 0 ~ "rotten",
+    points == 1 ~ "ripe")) |>
+  ggplot(aes(x = points, y = sac_duration, color = points, fill = points)) +
+  
+  # stat_dots(
+  #   side = "right",  
+  #   justification = 0,  
+  #   binwidth = 0.25,
+  #   linewidth = 0.5,
+  #   alpha = 1
+  # ) +
+  
+  stat_summary(
+    fun.data = mean_cl_boot, conf.int = .95, B = 5000,
+    geom = "pointrange", linewidth = 1, size = 1,
+    shape = 21 
+  ) +
+  
+  labs(x = "Outcome", y = "Saccades") +
+  theme(legend.position = "none") +
+  theme(panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank())
+```

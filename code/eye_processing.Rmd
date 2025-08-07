@@ -33,7 +33,7 @@ getwd()
 
 ```{r}
 # upload data
-test <- read_edf('../experiment/data/903406_regret_experiment_2025-08-06_16h07.51.977.EDF')
+test <- read_edf('../experiment/data/734722_regret_experiment_2025-08-07_10h53.41.207.EDF')
 ```
 
 ```{r}
