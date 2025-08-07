@@ -11,37 +11,45 @@ output: html_document
 knitr::opts_chunk$set(include = TRUE)
 
 if(!suppressWarnings(require(pacman))){install.packages("pacman");library("pacman")}
-p_load(tidyverse, tidyr, dplyr, ggplot2, stats, sjPlot, readr, ggpubr, patchwork, lubridate, ggthemr, ggdist, showtext, eyelinkReader, usethis, data_table, png, grid)
+p_load(tidyverse, tidyr, dplyr, ggplot2, stats, sjPlot, readr, ggpubr, patchwork, lubridate, ggthemr, ggdist, showtext, eyelinkReader, usethis, data.table, png, grid)
 ```
 
 ```{r}
+# setting the theme for plots
 ggthemr("fresh")
 ```
 
 ```{r}
-usethis::edit_r_environ()
+# only run the first time you are using the eyelinkReader package
+#usethis::edit_r_environ()
 ```
 
 ```{r}
+# check that you are in the github directory
 getwd()
 ```
 
 # Single participant
 
 ```{r}
+# upload data
 test <- read_edf('../experiment/data/903406_regret_experiment_2025-08-06_16h07.51.977.EDF')
 ```
 
 ```{r}
-#View(test$saccades)
+# plot fixations using the eyelinkReader native plotting function (does not separate by routine)
 plot(test, trial = NULL, show_fixations = TRUE, show_saccades = FALSE) +
-    coord_cartesian(xlim = c(0, 1920), ylim = c(0, 1080)) +
+    coord_cartesian(xlim = c(0, 1728), ylim = c(0, 1080)) +
+  geom_vline(xintercept = 1728/2) +
+  geom_hline(yintercept = 1080/2) +
   scale_y_reverse() 
 ```
+## Data processing 
 
 ```{r}
+msg  <- as.data.table(test$events)   
 sac  <- as.data.table(test$saccades)    
-msg  <- as.data.table(test$events)          
+fix  <- as.data.table(test$fixations)
 
 msg <- msg[type == "MESSAGEEVENT" & grepl("^(FIX|CHOICE|FEEDBACK|REGRET)", message),
            .(trial, msg_time = sttime_rel, label = message)]
@@ -58,37 +66,76 @@ msg <- msg |>
     )
   ) |>
   arrange(msg_time) |> 
-  fill(type, trial_num, .direction = "down")
+  fill(type, trial_num, .direction = "down") 
 
-sac[, `:=`(start = sttime_rel, end = entime_rel)]
+sac <- sac |>
+  select(sttime_rel, entime_rel, gstx, gsty, genx, geny, duration) %>% 
+  rename_with(~ paste0("sac_", .))
+
+fix <- fix |>
+  select(sttime_rel, entime_rel, gstx, gsty, genx, geny, duration) %>% 
+  rename_with(~ paste0("fix_", .))
+  
+sac[, `:=`(start = sac_sttime_rel, end = sac_entime_rel)]
 msg[, `:=`(start = msg_time, end = msg_time)]
+fix[, `:=`(start = fix_sttime_rel, end = fix_entime_rel)]
 
 setkey(msg, start, end)
 setkey(sac, start, end)
+setkey(fix, start, end)
                      
-sac_labeled <- msg[sac, on = .(trial, start), roll = TRUE]
+sac_labeled <- msg[sac, on = .(start), roll = TRUE]
+sac_fix_labeled <- sac_labeled[fix, on = .(start), roll = TRUE]
+
+sac_fix_labeled <- sac_fix_labeled |>
+  select(-c(trial, label, start, end, i.end, i.end.1)) |>
+  filter(!is.na(msg_time)) 
 
 
 ```
 
+## Data visualization
+
+### Fixations
 
 ```{r}
 # Basic bubble plot
-sac_labeled |>
-  filter(!is.na(type)) |>
-ggplot(aes(x = genx, y = geny, size = duration, color = type)) +
-  coord_cartesian(xlim = c(0, 1600), ylim = c(0, 1200), expand = FALSE) +
-  geom_point(aes(500, 600), shape = 18, size = 4, color = "black") +
-  geom_point(aes(800, 600), shape = 18, size = 4, color = "black") +
-  geom_point(aes(1100, 600), shape = 18, size = 4, color = "black") +
+sac_fix_labeled |>
+ggplot(aes(x = fix_gstx, y = fix_gsty, size = fix_duration, color = type)) +
+  coord_cartesian(xlim = c(0, 1728), ylim = c(0, 1080), expand = FALSE) +
+  scale_y_reverse() +
+  # geom_vline(xintercept = 1728/2) +
+  # geom_hline(yintercept = 1080/2) +
+  geom_point(aes(564, 540), shape = 18, size = 4, color = "black") +
+  geom_point(aes(864, 540), shape = 18, size = 4, color = "black") +
+  geom_point(aes(1164, 540), shape = 18, size = 4, color = "black") +
   geom_point(alpha = 0.5) +
   labs(
-    title = "Saccade start points",
+    title = "Fixation points",
+    x = "X (pixels)", y = "Y (pixels)", size = "Duration (ms)") +
+  theme(legend.position = "none") +
+  facet_wrap(~ type)
+```
+
+### Saccades
+
+```{r}
+sac_fix_labeled |>
+ggplot(aes(x = sac_genx, y = sac_geny, size = sac_duration, color = type)) +
+  coord_cartesian(xlim = c(0, 1728), ylim = c(0, 1080), expand = FALSE) +
+  scale_y_reverse() +
+  # geom_vline(xintercept = 1728/2) +
+  # geom_hline(yintercept = 1080/2) +
+  geom_point(aes(564, 540), shape = 18, size = 4, color = "black") +
+  geom_point(aes(864, 540), shape = 18, size = 4, color = "black") +
+  geom_point(aes(1164, 540), shape = 18, size = 4, color = "black") +
+  geom_point(alpha = 0.5) +
+  labs(
+    title = "Saccades end points",
     x = "X (pixels)", y = "Y (pixels)", size = "Duration (ms)") +
   theme(legend.position = "none") +
   facet_wrap(~ type)
 
-# NOTE: need to figure out why there appears to be a slight misallignment from the center
 ```
 
 # Whole sample -- IGNORE FOR NOW
