@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 This experiment was created using PsychoPy3 Experiment Builder (v2024.2.4),
-    on Thu Aug  7 10:53:18 2025
+    on Thu Aug  7 15:17:07 2025
 If you publish work using this script the most relevant publication is:
 
     Peirce J, Gray JR, Simpson S, MacAskill M, Höchenberger R, Sogo H, Kastman E, Lindeløv JK. (2019) 
@@ -1827,7 +1827,7 @@ def run(expInfo, thisExp, win, globalClock=None, thisSession=None):
     
     thisExp.addData('avg_regret', avg_regret)
     
-    end_display.text = f"Thanks for participating!"
+    end_display.text = f"Thank you for participating!"
     # store start times for EndScreen
     EndScreen.tStartRefresh = win.getFutureFlipTime(clock=globalClock)
     EndScreen.tStart = globalClock.getTime(format='float')

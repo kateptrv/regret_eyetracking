@@ -11,7 +11,7 @@ output: html_document
 knitr::opts_chunk$set(include = TRUE)
 
 if(!suppressWarnings(require(pacman))){install.packages("pacman");library("pacman")}
-p_load(tidyverse, tidyr, dplyr, ggplot2, stats, sjPlot, readr, ggpubr, patchwork, lubridate, ggthemr, ggdist, ggpubr, showtext, usethis, data.table, png, grid, purrr)
+p_load(tidyverse, tidyr, dplyr, ggplot2, stats, sjPlot, readr, ggpubr, patchwork, lubridate, ggthemr, ggdist, ggpubr, showtext, usethis, data.table, png, grid, purrr, ggimage)
 ```
 
 ```{r}
@@ -25,6 +25,16 @@ data <- read_csv("../data/data_merged.csv", show_col_types = FALSE)
 ### Sanity check that people are looking at what they are choosing
 
 ```{r}
+tree_icons <- tibble::tibble(
+  x = c(564, 864, 1164),
+  y = c(540, 540, 540),
+  image = c("../experiment/images/tree-1.png", "../experiment/images/tree-2.png", "../experiment/images/tree-3.png")
+)
+
+```
+
+
+```{r}
 # plotting fixations by choice
 data |>
   filter(type == "choice") |>
@@ -34,18 +44,20 @@ data |>
     choice == 3 ~ "right"
   )) |>
   ggplot(aes(x = fix_genx, y = fix_geny, size = fix_duration, color = type)) +
-  coord_cartesian(xlim = c(0, 1728), ylim = c(0, 1080), expand = FALSE) +
-  scale_y_reverse() +
-  geom_point(aes(564, 540), shape = 18, size = 4, color = "black") +
-  geom_point(aes(864, 540), shape = 18, size = 4, color = "black") +
-  geom_point(aes(1164, 540), shape = 18, size = 4, color = "black") +
-  geom_point(alpha = 0.5) +
+  coord_cartesian(xlim = c(0, 1728), ylim = c(1080, 0), expand = FALSE) +
+  geom_image(
+    data = tree_icons,
+    inherit.aes = FALSE,
+    aes(x = x, y = y, image = image),
+    size = 0.12  
+  ) +
+  geom_point(alpha = 0.3, color = "#c1121f") +
   labs(
     title = "Fixations by choice") +
   facet_wrap(~ choice) +
   theme(legend.position = "none", 
         axis.title.x = element_blank(),
-        axis.title.y = element_blank())
+        axis.title.y = element_blank()) 
 ```
 ```{r}
 # plotting saccades by choice
@@ -57,14 +69,16 @@ data |>
     choice == 3 ~ "right"
   )) |>
   ggplot(aes(x = sac_genx, y = sac_geny, size = sac_duration, color = type)) +
-  coord_cartesian(xlim = c(0, 1728), ylim = c(0, 1080), expand = FALSE) +
-  scale_y_reverse() +
-  geom_point(aes(564, 540), shape = 18, size = 4, color = "black") +
-  geom_point(aes(864, 540), shape = 18, size = 4, color = "black") +
-  geom_point(aes(1164, 540), shape = 18, size = 4, color = "black") +
-  geom_point(alpha = 0.5) +
+  coord_cartesian(xlim = c(0, 1728), ylim = c(1080, 0), expand = FALSE) +
+  geom_image(
+    data = tree_icons,
+    inherit.aes = FALSE,
+    aes(x = x, y = y, image = image),
+    size = 0.12  
+  ) +
+  geom_point(alpha = 0.3, color = "#c1121f") +
   labs(
-    title = "Fixations by choice") +
+    title = "Saccades by choice") +
   facet_wrap(~ choice) +
   theme(legend.position = "none", 
         axis.title.x = element_blank(),
@@ -76,6 +90,7 @@ data |>
 # fixations
 data_merged |> 
   filter(type == "feedback") |>
+  mutate(half = ifelse(trial_index <= 30, "first", "second")) |>
   ggplot(aes(x = choice_goodbad, y = fix_duration, color = choice_goodbad, fill = choice_goodbad)) +
   
   # stat_dots(
@@ -92,10 +107,11 @@ data_merged |>
     shape = 21 
   ) +
   
-  labs(x = "Outcome", y = "Fixation time", title = "Outcome looking time by goodness of choice") +
+  labs(x = "Outcome", y = "Fixation time", title = "Outcome looking time by goodness of choice and outcome") +
   theme(legend.position = "none") +
   theme(panel.grid.major.x = element_blank(),
-        panel.grid.minor.x = element_blank())
+        panel.grid.minor.x = element_blank()) +
+  facet_wrap(~ points)
 ```
 
 ```{r}
@@ -118,10 +134,32 @@ data_merged |>
     shape = 21 
   ) +
   
-  labs(x = "Outcome", y = "Saccades", title = "Saccades by goodness of choice") +
+  labs(x = "Outcome", y = "Saccades", title = "Saccades by goodness of choice and outcome") +
   theme(legend.position = "none") +
   theme(panel.grid.major.x = element_blank(),
-        panel.grid.minor.x = element_blank())
+        panel.grid.minor.x = element_blank()) +
+  facet_wrap(~ points)
+```
+
+```{r}
+# fixations
+data_merged |> 
+  filter(type == "choice") |>
+  mutate(half = ifelse(trial_index <= 30, "first", "second")) |>
+  ggplot(aes(x = choice_prob, y = fix_duration)) +
+  
+  # stat_dots(
+  #   side = "right",  
+  #   justification = 0,  
+  #   binwidth = 0.25,
+  #   linewidth = 0.5,
+  #   alpha = 1
+  # ) +
+  
+  geom_smooth(method = "lm", color = "black", size = 1) +
+  theme(legend.position = "none") +
+  theme(panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank()) 
 ```
 
 ## Outcome gaze dynamics
@@ -130,6 +168,7 @@ data_merged |>
 # fixations
 data_merged |>
   filter(type == "feedback") |>
+    mutate(half = ifelse(trial_index <= 30, "first", "second")) |>
   mutate(points = case_when(
     points == 0 ~ "rotten",
     points == 1 ~ "ripe")) |>
@@ -152,13 +191,15 @@ data_merged |>
   labs(x = "Outcome", y = "Fixation time") +
   theme(legend.position = "none") +
   theme(panel.grid.major.x = element_blank(),
-        panel.grid.minor.x = element_blank())
+        panel.grid.minor.x = element_blank()) +
+  facet_wrap(~ half)
 ```
 
 ```{r}
 # saccades
 data_merged |>
   filter(type == "feedback") |>
+  mutate(half = ifelse(trial_index <= 30, "first", "second")) |>
   mutate(points = case_when(
     points == 0 ~ "rotten",
     points == 1 ~ "ripe")) |>
@@ -181,5 +222,223 @@ data_merged |>
   labs(x = "Outcome", y = "Saccades") +
   theme(legend.position = "none") +
   theme(panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank()) +
+  facet_wrap(~ half)
+```
+## Regret
+
+```{r}
+data |>
+  filter(type == "choice") |>
+  ggplot(aes(regret, sac_duration)) +
+  #geom_smooth(method = "lm", color = "black", size = 1) +
+  geom_point(aes(color = regret), alpha = 0.5) +
+  # stat_dots(
+  #   side = "right",
+  #   justification = 0,
+  #   binwidth = 0.25,
+  #   linewidth = 0.5,
+  #   alpha = 1
+  # ) +
+  stat_summary(
+    fun.data = mean_cl_boot, conf.int = .95, B = 5000,
+    geom = "pointrange", linewidth = 1, size = 1,
+    shape = 21 
+  ) +
+  labs(x = "Regret", y = "Saccades") +
+  theme(legend.position = "none") +
+  theme(panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank()) +
+  stat_cor()
+```
+```{r}
+data |>
+  filter(type == "feedback") |>
+  ggplot(aes(regret, sac_duration)) +
+  geom_smooth(method = "lm", color = "black", size = 1) +
+  # stat_dots(
+  #   side = "right",
+  #   justification = 0,
+  #   binwidth = 0.25,
+  #   linewidth = 0.5,
+  #   alpha = 1
+  # ) +
+  stat_summary(
+    fun.data = mean_cl_boot, conf.int = .95, B = 5000,
+    geom = "pointrange", linewidth = 1, size = 1,
+    shape = 21 
+  ) +
+  labs(x = "Regret", y = "Saccades") +
+  theme(legend.position = "none") +
+  theme(panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank()) +
+  stat_cor() 
+```
+
+
+## Reaction time
+
+```{r}
+data |>
+  filter(type == "choice") |>
+  ggplot(aes(x = regret, y = choice_rt)) +
+  stat_summary(
+    fun.data = mean_cl_boot, conf.int = .95, B = 5000,
+    geom = "pointrange", linewidth = 1, size = 1,
+    shape = 21 
+  ) +
+  labs(x = "Regret", y = "Reaction time (ms)") +
+  theme(legend.position = "none") +
+  theme(panel.grid.major.x = element_blank(),
         panel.grid.minor.x = element_blank())
+```
+```{r}
+data |>
+  filter(type == "choice") |>
+  ggplot(aes(x = fix_duration, y = choice_rt)) +
+  geom_smooth(method = "lm", color = "black", size = 1) +
+  geom_point(aes(color = regret), alpha = 0.5) +
+  labs(x = "Regret", y = "Reaction time (ms)") +
+  theme(legend.position = "none") +
+  theme(panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank())
+```
+## Trial dynamics
+
+```{r}
+data |>
+  filter(type == "choice") |>
+  ggplot(aes(x = trial_index, y = sac_duration)) +
+  geom_smooth(method = "lm", color = "black", size = 1) +
+  geom_point() +
+  labs(x = "Trial", y = "Reaction time (ms)") +
+  theme(legend.position = "none") +
+  theme(panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank())
+```
+
+## Gaze towards alternative options
+
+```{r}
+# gaze dynamics; red line = location of where a participant is looking; blue = location of chosen tree
+data |>
+  filter(pid == 734722) |>
+  filter(type == "choice") |>
+  mutate(choice = case_when(
+    choice == 1 ~ 564,
+    choice == 2 ~ 864,
+    choice == 3 ~ 1164
+  )) |>
+  ggplot(aes(x = trial_index)) +
+  stat_smooth(method = "loess", aes(y = fix_genx), color = "#c1121f", span = 0.5) +
+  stat_smooth(method = "loess", aes(y = choice), color = "#003049", span = 0.5) +
+  labs(x = "Trial", y = "X-coordinate",
+       title = "Gaze dynamics during choice phase across trials") 
+```
+
+```{r}
+# ---- parameters you can tweak ----
+screen_w <- 1728; screen_h <- 1080
+centers  <- tibble(tree = paste0("tree_", 1:3),
+                   x_c = c(564, 864, 1164),
+                   y_c = 540)
+
+# Rectangular AOI size (width x height in px)
+aoi_w <- 300
+aoi_h <- 400
+
+# Circular AOI radius (px)
+aoi_r <- 170
+
+# ---- build AOI definitions ----
+aoi_rect <- centers %>%
+  mutate(xmin = pmax(0, x_c - aoi_w/2),
+         xmax = pmin(screen_w, x_c + aoi_w/2),
+         ymin = pmax(0, y_c - aoi_h/2),
+         ymax = pmin(screen_h, y_c + aoi_h/2))
+
+aoi_circ <- centers %>%
+  mutate(r = aoi_r)
+
+# Helper: point-in-rectangle
+in_rect <- function(x, y, xmin, xmax, ymin, ymax) {
+  x >= xmin & x <= xmax & y >= ymin & y <= ymax
+}
+
+# Helper: point-in-circle
+in_circ <- function(x, y, x_c, y_c, r) {
+  (x - x_c)^2 + (y - y_c)^2 <= r^2
+}
+
+# ---- classify gaze samples to AOI (rectangular version) ----
+# expects columns: pid, trial_index (or trial), x, y, type, choice, tree_1, tree_2, tree_3
+data_aoi <- data %>%
+  filter(type == "feedback") %>%
+  # your existing mapping of centers
+  mutate(choice = case_when(
+           choice == 1 ~ 564,
+           choice == 2 ~ 864,
+           choice == 3 ~ 1164
+         ),
+         best_tree_coord = case_when(tree_1 == 0.7 ~ 564,
+                                     tree_2 == 0.7 ~ 864,
+                                     tree_3 == 0.7 ~ 1164),
+         medium_tree_coord = case_when(tree_1 == 0.5 ~ 564,
+                                       tree_2 == 0.5 ~ 864,
+                                       tree_3 == 0.5 ~ 1164),
+         worst_tree_coord = case_when(tree_1 == 0.2 ~ 564,
+                                      tree_2 == 0.2 ~ 864,
+                                      tree_3 == 0.2 ~ 1164)) %>%
+  mutate(x = fix_genx,
+         y = fix_geny) %>%
+  # compute rect AOI membership
+  rowwise() %>%
+  mutate(
+    in_tree_1 = in_rect(x, y,
+                        xmin = aoi_rect$xmin[aoi_rect$tree=="tree_1"],
+                        xmax = aoi_rect$xmax[aoi_rect$tree=="tree_1"],
+                        ymin = aoi_rect$ymin[aoi_rect$tree=="tree_1"],
+                        ymax = aoi_rect$ymax[aoi_rect$tree=="tree_1"]),
+    in_tree_2 = in_rect(x, y,
+                        xmin = aoi_rect$xmin[aoi_rect$tree=="tree_2"],
+                        xmax = aoi_rect$xmax[aoi_rect$tree=="tree_2"],
+                        ymin = aoi_rect$ymin[aoi_rect$tree=="tree_2"],
+                        ymax = aoi_rect$ymax[aoi_rect$tree=="tree_2"]),
+    in_tree_3 = in_rect(x, y,
+                        xmin = aoi_rect$xmin[aoi_rect$tree=="tree_3"],
+                        xmax = aoi_rect$xmax[aoi_rect$tree=="tree_3"],
+                        ymin = aoi_rect$ymin[aoi_rect$tree=="tree_3"],
+                        ymax = aoi_rect$ymax[aoi_rect$tree=="tree_3"]),
+    aoi_tree = case_when(
+      in_tree_1 ~ "tree_1",
+      in_tree_2 ~ "tree_2",
+      in_tree_3 ~ "tree_3",
+      TRUE      ~ "none"
+    )
+  ) %>%
+  ungroup() %>%
+  # optional: nearest tree by Euclidean distance (useful when a point is in none/overlaps)
+  mutate(
+    dist_t1 = sqrt((x - 564)^2  + (y - 540)^2),
+    dist_t2 = sqrt((x - 864)^2  + (y - 540)^2),
+    dist_t3 = sqrt((x - 1164)^2 + (y - 540)^2)
+  )
+
+```
+
+```{r}
+trial_summ <- data_aoi %>%
+  filter(type == "feedback", aoi_tree %in% c("tree_1","tree_2","tree_3")) %>%
+  mutate(aoi_rank = recode(aoi_tree, tree_1="worst", tree_2="medium", tree_3="best"),
+         chosen_rank = choice_goodbad) %>%
+  group_by(pid, trial_index, chosen_rank) %>%
+  mutate(p_best   = mean(aoi_rank == "best"),
+            p_medium = mean(aoi_rank == "medium"),
+            p_worst  = mean(aoi_rank == "worst"))
+
+
+ggplot(trial_summ2, aes(x = p_best, y = regret)) +
+  geom_smooth(method = "lm") +
+  facet_wrap(~ choice_goodbad)
+  
 ```
