@@ -27,7 +27,7 @@ data <- read_csv("../data/data_merged.csv", show_col_types = FALSE)
 ```{r}
 tree_icons <- tibble::tibble(
   x = c(564, 864, 1164),
-  y = c(540, 540, 540),
+  y = c(440, 440, 440),
   image = c("../experiment/images/tree-1.png", "../experiment/images/tree-2.png", "../experiment/images/tree-3.png")
 )
 
