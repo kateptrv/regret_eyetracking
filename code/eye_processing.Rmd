@@ -141,27 +141,23 @@ ggplot(aes(x = sac_genx, y = sac_geny, size = sac_duration, color = type)) +
 # Whole sample
 
 ```{r}
-# get a list of all EDF files
-edf_files <- list.files("/Users/anhthudang/Downloads/Piloting Eyetracking/regret_eyetracking/experiment/data", pattern = "\\.EDF$", full.names = TRUE)
+edf_files <- list.files("../experiment/data", pattern = "\\.EDF$", full.names = TRUE)
 edf_files <- edf_files[file.info(edf_files)$size > 10000]
 
-# extract participant IDs from file names
-get_pid <- function(path) {
-  str_extract(basename(path), "^\\d{6}")
-}
+get_pid <- function(path) str_extract(basename(path), "^\\d{6}")
 
-# function to process the files one by one, just like the single-participant code above but with a few additions
 process_edf <- function(path) {
-  pid <- get_pid(path) # getting participant id
-  
-  test <- read_edf(path)  
-  
-  msg <- as.data.table(test$events)
-  msg <- msg[
+  pid <- get_pid(path)
+
+  test <- read_edf(path)
+
+  # --- messages ---
+  msg <- as.data.table(test$events)[
     type == "MESSAGEEVENT" & grepl("^(FIX|CHOICE|FEEDBACK|REGRET)", message),
     .(msg_time = sttime_rel, label = message)
   ]
 
+  # use dplyr/tidyr to parse labels, then convert back to data.table
   msg <- msg |>
     mutate(
       trial_num = as.numeric(str_extract(label, "\\d+")),
@@ -174,41 +170,61 @@ process_edf <- function(path) {
       )
     ) |>
     arrange(msg_time) |>
-    fill(type, trial_num, .direction = "down")
+    fill(type, trial_num, .direction = "down") |>
+    as.data.table()
 
-  sac <- as.data.table(test$saccades) |>
-    select(sttime_rel, entime_rel, gstx, gsty, genx, geny, duration) |>
-    rename_with(~ paste0("sac_", .))
-
-  fix <- as.data.table(test$fixations) |>
-    select(sttime_rel, entime_rel, gstx, gsty, genx, geny, duration) |>
-    rename_with(~ paste0("fix_", .))
-
-  sac[, `:=`(start = sac_sttime_rel, end = sac_entime_rel)]
+  # add join keys
   msg[, `:=`(start = msg_time, end = msg_time)]
-  fix[, `:=`(start = fix_sttime_rel, end = fix_entime_rel)]
-
   setkey(msg, start, end)
+
+  # --- saccades ---
+  sac <- as.data.table(test$saccades)[, .(
+    sac_sttime_rel = sttime_rel, sac_entime_rel = entime_rel,
+    sac_gstx = gstx, sac_gsty = gsty, sac_genx = genx, sac_geny = geny,
+    sac_duration = duration
+  )]
+  sac[, `:=`(start = sac_sttime_rel, end = sac_entime_rel)]
   setkey(sac, start, end)
+
+  # --- fixations ---
+  fix <- as.data.table(test$fixations)[, .(
+    fix_sttime_rel = sttime_rel, fix_entime_rel = entime_rel,
+    fix_gstx = gstx, fix_gsty = gsty, fix_genx = genx, fix_geny = geny,
+    fix_duration = duration
+  )]
+  fix[, `:=`(start = fix_sttime_rel, end = fix_entime_rel)]
   setkey(fix, start, end)
 
-  # joining all in one go here because of errors
-  labeled <- fix[sac[msg, roll = TRUE], roll = TRUE]
+  # --- rolling overlap joins: msg → sac → fix ---
+  # First label saccades with nearest msg, then fixations with nearest of that result
+  sac_labeled <- sac[msg, roll = TRUE]
+  labeled     <- fix[sac_labeled, roll = TRUE]
 
-  sac_fix_labeled <- sac_fix_labeled |>
-    filter(!is.na(msg_time)) |>
-    mutate(pid = pid)
+  # keep only rows that got a message label, and attach pid
+  out <- labeled[!is.na(msg_time)]
+  out[, pid := as.numeric(pid)]
 
-  return(sac_fix_labeled)
+  # ensure trial_num survived (if not, bring from msg columns)
+  # already included via join; just sanity-check
+  if (!"trial_num" %in% names(out)) out[, trial_num := NA_integer_]
+
+  return(out[])
 }
 
-# apply the function the all edf files
-data_eye_processed <- rbindlist(lapply(edf_files, process_edf), fill = TRUE) |>
-  rename(trial_index = trial_num) |>
-  relocate(pid, .before = trial_index) |>
-  select(-msg_time) |>
-  mutate(pid = as.numeric(pid))
+data_eye_processed <- rbindlist(lapply(edf_files, process_edf), fill = TRUE)
 
+# drop safely (only if present)
+if ("msg_time" %in% names(data_eye_processed)) data_eye_processed[, msg_time := NULL]
+
+# create trial_index and drop trial_num
+if (!"trial_num" %in% names(data_eye_processed)) data_eye_processed[, trial_num := NA_integer_]
+data_eye_processed[, trial_index := trial_num][, trial_num := NULL]
+
+# put pid and trial_index first
+setcolorder(
+  data_eye_processed,
+  c("pid", "trial_index", setdiff(names(data_eye_processed), c("pid","trial_index")))
+)
 ``` 
 ```{r}
 # check that the dataset looks as expected

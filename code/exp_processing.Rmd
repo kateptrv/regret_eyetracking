@@ -18,7 +18,7 @@ p_load(tidyverse, tidyr, dplyr, ggplot2, stats, sjPlot, readr, ggpubr, patchwork
 
 ```{r}
 # list csv files
-csv_files <- list.files("/Users/anhthudang/Downloads/Piloting Eyetracking/regret_eyetracking/experiment/data", pattern = "\\.csv$", full.names = TRUE)
+csv_files <- list.files("../experiment/data", pattern = "\\.csv$", full.names = TRUE)
 csv_files <- csv_files[file.info(csv_files)$size > 1000]
 
 
@@ -109,7 +109,7 @@ data_merged <-
   group_by(pid, trial_index) |>
   inner_join(data_eye_processed, by = c("pid", "trial_index")) |>
   ungroup() |>
-  relocate(type, .after = trial_index) 
+  relocate(type_lab, .after = trial_index) 
   
 ```
 

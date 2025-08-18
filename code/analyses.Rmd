@@ -15,7 +15,8 @@ p_load(tidyverse, tidyr, dplyr, ggplot2, stats, sjPlot, readr, ggpubr, patchwork
 ```
 
 ```{r}
-data <- read_csv("../data/data_merged.csv", show_col_types = FALSE)
+data <- read_csv("../data/data_merged.csv", show_col_types = FALSE) |>
+  rename(type = type_lab)
 ```
 
 # Analyses and visulizations
@@ -27,7 +28,7 @@ data <- read_csv("../data/data_merged.csv", show_col_types = FALSE)
 ```{r}
 tree_icons <- tibble::tibble(
   x = c(564, 864, 1164),
-  y = c(440, 440, 440),
+  y = c(540, 540, 540),
   image = c("../experiment/images/tree-1.png", "../experiment/images/tree-2.png", "../experiment/images/tree-3.png")
 )
 
@@ -53,7 +54,7 @@ data |>
     choice == 2 ~ "middle",
     choice == 3 ~ "right"
   )) |>
-  ggplot(aes(x = fix_genx, y = fix_geny, size = fix_duration, color = type)) +
+  ggplot(aes(x = fix_genx, y = fix_geny, size = fix_duration)) +
   coord_cartesian(xlim = c(0, 1728), ylim = c(1080, 0), expand = FALSE) +
   geom_image(
     data = tree_icons,
@@ -64,19 +65,12 @@ data |>
   geom_point(alpha = 0.3, color = "#c1121f") +
   labs(
     title = "Fixations by choice") +
-  facet_wrap(~ choice) +
   theme(legend.position = "none", 
         axis.title.x = element_blank(),
-        axis.title.y = element_blank()) 
+        axis.title.y = element_blank()) +
+  facet_wrap(~ choice) 
 ```
-  geom_point(alpha = 0.3, color = "#c1121f") +
-  labs(
-    title = "Fixations by choice") +
-  facet_wrap(~ choice) +
-  theme(legend.position = "none", 
-        axis.title.x = element_blank(),
-        axis.title.y = element_blank()) 
-```
+
 ```{r}
 # plotting saccades by choice
 data |>
@@ -102,11 +96,11 @@ data |>
         axis.title.x = element_blank(),
         axis.title.y = element_blank())
 ```
-### Goodness of choice gaze dynamics
+
 
 ```{r}
 # fixations
-data_merged |> 
+data |> 
   filter(type == "feedback") |>
   mutate(half = ifelse(trial_index <= 30, "first", "second")) |>
   ggplot(aes(x = choice_goodbad, y = fix_duration, color = choice_goodbad, fill = choice_goodbad)) +
@@ -131,10 +125,9 @@ data_merged |>
         panel.grid.minor.x = element_blank()) +
   facet_wrap(~ points)
 ```
-
 ```{r}
 # saccades
-data_merged |> 
+data |> 
   filter(type == "feedback") |>
   ggplot(aes(x = choice_goodbad, y = sac_duration, color = choice_goodbad, fill = choice_goodbad)) +
   
@@ -158,10 +151,9 @@ data_merged |>
         panel.grid.minor.x = element_blank()) +
   facet_wrap(~ points)
 ```
-
 ```{r}
 # fixations
-data_merged |> 
+data |> 
   filter(type == "choice") |>
   mutate(half = ifelse(trial_index <= 30, "first", "second")) |>
   ggplot(aes(x = choice_prob, y = fix_duration)) +
@@ -181,10 +173,9 @@ data_merged |>
 ```
 
 ## Outcome gaze dynamics
-
 ```{r}
 # fixations
-data_merged |>
+data |>
   filter(type == "feedback") |>
     mutate(half = ifelse(trial_index <= 30, "first", "second")) |>
   mutate(points = case_when(
@@ -212,10 +203,9 @@ data_merged |>
         panel.grid.minor.x = element_blank()) +
   facet_wrap(~ half)
 ```
-
 ```{r}
 # saccades
-data_merged |>
+data |>
   filter(type == "feedback") |>
   mutate(half = ifelse(trial_index <= 30, "first", "second")) |>
   mutate(points = case_when(
@@ -244,7 +234,6 @@ data_merged |>
   facet_wrap(~ half)
 ```
 ## Regret
-
 ```{r}
 data |>
   filter(type == "choice") |>
@@ -269,6 +258,8 @@ data |>
         panel.grid.minor.x = element_blank()) +
   stat_cor()
 ```
+
+
 ```{r}
 data |>
   filter(type == "feedback") |>
@@ -293,9 +284,7 @@ data |>
   stat_cor() 
 ```
 
-
 ## Reaction time
-
 ```{r}
 data |>
   filter(type == "choice") |>
@@ -310,6 +299,7 @@ data |>
   theme(panel.grid.major.x = element_blank(),
         panel.grid.minor.x = element_blank())
 ```
+
 ```{r}
 data |>
   filter(type == "choice") |>
@@ -321,8 +311,8 @@ data |>
   theme(panel.grid.major.x = element_blank(),
         panel.grid.minor.x = element_blank())
 ```
-## Trial dynamics
 
+## Trial dynamics
 ```{r}
 data |>
   filter(type == "choice") |>
@@ -353,7 +343,6 @@ data |>
   labs(x = "Trial", y = "X-coordinate",
        title = "Gaze dynamics during choice phase across trials") 
 ```
-
 ```{r}
 # ---- parameters you can tweak ----
 screen_w <- 1728; screen_h <- 1080
@@ -455,7 +444,7 @@ trial_summ <- data_aoi %>%
             p_worst  = mean(aoi_rank == "worst"))
 
 
-ggplot(trial_summ2, aes(x = p_best, y = regret)) +
+ggplot(trial_summ, aes(x = p_best, y = regret)) +
   geom_smooth(method = "lm") +
   facet_wrap(~ choice_goodbad)
   
