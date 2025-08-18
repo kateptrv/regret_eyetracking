@@ -1,4 +1,4 @@
----
+g---
 title: "eye_processing"
 author: "Kate Petrova"
 date: "2025-08-05"
@@ -142,7 +142,8 @@ ggplot(aes(x = sac_genx, y = sac_geny, size = sac_duration, color = type)) +
 
 ```{r}
 # get a list of all EDF files
-edf_files <- list.files("../experiment/data", pattern = "\\.EDF$", full.names = TRUE)
+edf_files <- list.files("/Users/anhthudang/Downloads/Piloting Eyetracking/regret_eyetracking/experiment/data", pattern = "\\.EDF$", full.names = TRUE)
+edf_files <- edf_files[file.info(edf_files)$size > 10000]
 
 # extract participant IDs from file names
 get_pid <- function(path) {

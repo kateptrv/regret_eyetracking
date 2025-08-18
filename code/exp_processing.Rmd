@@ -18,17 +18,29 @@ p_load(tidyverse, tidyr, dplyr, ggplot2, stats, sjPlot, readr, ggpubr, patchwork
 
 ```{r}
 # list csv files
-csv_files <- list.files("../experiment/data", pattern = "\\.csv$", full.names = TRUE)
+csv_files <- list.files("/Users/anhthudang/Downloads/Piloting Eyetracking/regret_eyetracking/experiment/data", pattern = "\\.csv$", full.names = TRUE)
+csv_files <- csv_files[file.info(csv_files)$size > 1000]
+
 
 # get PIDs from csv files
 get_pid <- function(path) {
   str_extract(basename(path), "^\\d{6}")
 }
 
+# --- 3. Columns to coerce for consistent types ---
+cols_to_numeric <- c("frameRate", "trial_num", "choice_rt", "choice_prob", "points", "regret_rating", "regret_rt")
+cols_to_character <- c("participant", "choice_key", "participant_cond") 
+
 data_exp_raw <- map_dfr(csv_files, function(path) {
   df <- read_csv(path, show_col_types = FALSE)
 
   df$pid <- get_pid(path)
+  
+    # Coerce numeric columns
+  for(col in cols_to_numeric) if(col %in% names(df)) df[[col]] <- as.numeric(df[[col]])
+  
+  # Coerce character columns
+  for(col in cols_to_character) if(col %in% names(df)) df[[col]] <- as.character(df[[col]])
 
   df
 })

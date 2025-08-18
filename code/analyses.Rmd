@@ -31,6 +31,16 @@ tree_icons <- tibble::tibble(
   image = c("../experiment/images/tree-1.png", "../experiment/images/tree-2.png", "../experiment/images/tree-3.png")
 )
 
+apple_icons <- tibble::tibble(
+  points = c("rotten", "ripe"),
+  x = c(1, 2),  # discrete x positions
+  image = c(
+    "../experiment/images/apple-neg.png",
+    "../experiment/images/apple-high.png"
+  )
+)
+
+
 ```
 
 
@@ -51,6 +61,14 @@ data |>
     aes(x = x, y = y, image = image),
     size = 0.12  
   ) +
+  geom_point(alpha = 0.3, color = "#c1121f") +
+  labs(
+    title = "Fixations by choice") +
+  facet_wrap(~ choice) +
+  theme(legend.position = "none", 
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank()) 
+```
   geom_point(alpha = 0.3, color = "#c1121f") +
   labs(
     title = "Fixations by choice") +
