@@ -64,7 +64,7 @@ data |>
   ) +
   geom_point(alpha = 0.3, color = "#c1121f") +
   labs(
-    title = "Fixations by choice") +
+    title = "Fixations By Choice") +
   theme(legend.position = "none", 
         axis.title.x = element_blank(),
         axis.title.y = element_blank()) +
