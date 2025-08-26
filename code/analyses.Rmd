@@ -16,19 +16,30 @@ p_load(tidyverse, tidyr, dplyr, ggplot2, stats, sjPlot, readr, ggpubr, patchwork
 
 ```{r}
 data <- read_csv("../data/data_merged.csv", show_col_types = FALSE) |>
-  rename(type = type_lab)
+  rename(type = type_lab) |>
+  filter(pid != "045463" & pid != "88188" & pid != "395947" & pid != "657622" & pid != "530972" & pid != "514052" & pid != "595882" & pid != "449380" & pid != "135340" & pid != "897793" & pid != "734722")
+  
 ```
 
-# Analyses and visulizations
+```{r}
+data |>
+  select(pid) |>
+  distinct() 
+```
+```{r}
+ggthemr("fresh")
+```
 
-## Choice gaze dynamics
+# POSTER
 
-### Sanity check that people are looking at what they are choosing
+## PLOT 1
+
+### Processing
 
 ```{r}
 tree_icons <- tibble::tibble(
-  x = c(564, 864, 1164),
-  y = c(540, 540, 540),
+  x = c(504, 904, 1304),
+  y = c(640, 640, 640),
   image = c("../experiment/images/tree-1.png", "../experiment/images/tree-2.png", "../experiment/images/tree-3.png")
 )
 
@@ -44,32 +55,260 @@ apple_icons <- tibble::tibble(
 
 ```
 
+### Plot
 
 ```{r}
 # plotting fixations by choice
-data |>
-  filter(type == "choice") |>
+data %>%
+  filter(type == "choice") %>%
+  filter(fix_duration > 200) |>
   mutate(choice = case_when(
     choice == 1 ~ "left",
     choice == 2 ~ "middle",
     choice == 3 ~ "right"
-  )) |>
-  ggplot(aes(x = fix_genx, y = fix_geny, size = fix_duration)) +
-  coord_cartesian(xlim = c(0, 1728), ylim = c(1080, 0), expand = FALSE) +
+  )) %>%
+  ggplot(aes(x = fix_genx, y = fix_geny)) +
+  coord_cartesian(xlim = c(0, 1728), ylim = c(1080, 0)) +
   geom_image(
-    data = tree_icons,
-    inherit.aes = FALSE,
+    data = tree_icons, inherit.aes = FALSE,
     aes(x = x, y = y, image = image),
-    size = 0.12  
+    size = 0.12
   ) +
-  geom_point(alpha = 0.3, color = "#c1121f") +
-  labs(
-    title = "Fixations By Choice") +
+  stat_density_2d(
+    geom = "polygon",
+    alpha = 0.2,
+    fill = "#c1121f",
+    adjust = c(0.5, 0.5)
+  ) +
+  labs(x = "Gaze during choice (x)", y = "Gaze during choice (y)") +
+  # remove x axis labels
   theme(legend.position = "none", 
-        axis.title.x = element_blank(),
-        axis.title.y = element_blank()) +
+        axis.text.x = element_blank(),
+        axis.text.y = element_blank()) +
   facet_wrap(~ choice) 
 ```
+
+## PLOT 2
+
+### Processing
+
+```{r}
+# ---- parameters you can tweak ----
+screen_w <- 1728; screen_h <- 1080
+centers  <- tibble(tree = paste0("tree_", 1:3),
+                   x_c = c(564, 864, 1164),
+                   y_c = 540)
+
+# Rectangular AOI size (width x height in px)
+aoi_w <- 300
+aoi_h <- 400
+
+# Circular AOI radius (px)
+aoi_r <- 170
+
+# ---- build AOI definitions ----
+aoi_rect <- centers %>%
+  mutate(xmin = pmax(0, x_c - aoi_w/2),
+         xmax = pmin(screen_w, x_c + aoi_w/2),
+         ymin = pmax(0, y_c - aoi_h/2),
+         ymax = pmin(screen_h, y_c + aoi_h/2))
+
+aoi_circ <- centers %>%
+  mutate(r = aoi_r)
+
+# Helper: point-in-rectangle
+in_rect <- function(x, y, xmin, xmax, ymin, ymax) {
+  x >= xmin & x <= xmax & y >= ymin & y <= ymax
+}
+
+# Helper: point-in-circle
+in_circ <- function(x, y, x_c, y_c, r) {
+  (x - x_c)^2 + (y - y_c)^2 <= r^2
+}
+
+# ---- classify gaze samples to AOI (rectangular version) ----
+# expects columns: pid, trial_index (or trial), x, y, type, choice, tree_1, tree_2, tree_3
+data_aoi <- data %>%
+  filter(type == "feedback") %>%
+  # your existing mapping of centers
+  mutate(choice = case_when(
+           choice == 1 ~ 564,
+           choice == 2 ~ 864,
+           choice == 3 ~ 1164
+         ),
+         best_tree_coord = case_when(tree_1 == 0.7 ~ 564,
+                                     tree_2 == 0.7 ~ 864,
+                                     tree_3 == 0.7 ~ 1164),
+         medium_tree_coord = case_when(tree_1 == 0.5 ~ 564,
+                                       tree_2 == 0.5 ~ 864,
+                                       tree_3 == 0.5 ~ 1164),
+         worst_tree_coord = case_when(tree_1 == 0.2 ~ 564,
+                                      tree_2 == 0.2 ~ 864,
+                                      tree_3 == 0.2 ~ 1164)) %>%
+  mutate(x = fix_genx,
+         y = fix_geny) %>%
+  # compute rect AOI membership
+  rowwise() %>%
+  mutate(
+    in_tree_1 = in_rect(x, y,
+                        xmin = aoi_rect$xmin[aoi_rect$tree=="tree_1"],
+                        xmax = aoi_rect$xmax[aoi_rect$tree=="tree_1"],
+                        ymin = aoi_rect$ymin[aoi_rect$tree=="tree_1"],
+                        ymax = aoi_rect$ymax[aoi_rect$tree=="tree_1"]),
+    in_tree_2 = in_rect(x, y,
+                        xmin = aoi_rect$xmin[aoi_rect$tree=="tree_2"],
+                        xmax = aoi_rect$xmax[aoi_rect$tree=="tree_2"],
+                        ymin = aoi_rect$ymin[aoi_rect$tree=="tree_2"],
+                        ymax = aoi_rect$ymax[aoi_rect$tree=="tree_2"]),
+    in_tree_3 = in_rect(x, y,
+                        xmin = aoi_rect$xmin[aoi_rect$tree=="tree_3"],
+                        xmax = aoi_rect$xmax[aoi_rect$tree=="tree_3"],
+                        ymin = aoi_rect$ymin[aoi_rect$tree=="tree_3"],
+                        ymax = aoi_rect$ymax[aoi_rect$tree=="tree_3"]),
+    aoi_tree = case_when(
+      in_tree_1 ~ "tree_1",
+      in_tree_2 ~ "tree_2",
+      in_tree_3 ~ "tree_3",
+      TRUE      ~ "none"
+    )
+  ) %>%
+  ungroup() %>%
+  # optional: nearest tree by Euclidean distance (useful when a point is in none/overlaps)
+  mutate(
+    dist_t1 = sqrt((x - 564)^2  + (y - 540)^2),
+    dist_t2 = sqrt((x - 864)^2  + (y - 540)^2),
+    dist_t3 = sqrt((x - 1164)^2 + (y - 540)^2)
+  )
+
+```
+
+```{r}
+trial_summ <- data_aoi %>%
+  filter(type == "feedback", aoi_tree %in% c("tree_1","tree_2","tree_3")) %>%
+  # map AOIs to best/medium/worst
+  mutate(aoi_rank = recode(aoi_tree, tree_1 = 1L, tree_2 = 2L, tree_3 = 3L),
+         aoi_rank = case_when(
+           aoi_rank == tree_best   ~ "best",
+           aoi_rank == tree_medium ~ "medium",
+           aoi_rank == tree_worst  ~ "worst"
+         ),
+         # collapse into chosen vs non-chosen
+         aoi_rank = ifelse(aoi_rank == choice_goodbad, "Chosen tree", "Non-chosen trees")) %>%
+  
+  # sum fixation durations per trial × aoi_rank
+  group_by(pid, trial_index) %>%
+  mutate(total_fix_duration = sum(fix_duration, na.rm = TRUE), .groups = "drop") %>%
+  ungroup() %>% 
+  
+  # compute proportion of total fixation time
+  group_by(pid, trial_index, aoi_rank) %>%
+  mutate(prop_fix = sum(fix_duration) / total_fix_duration) %>%
+  ungroup()
+  
+```
+
+### Plot
+
+```{r}
+trial_summ |>
+  ggplot(aes(y = regret, x = prop_fix, group = aoi_rank, color = aoi_rank, fill = aoi_rank)) +
+  geom_smooth(method = "lm", size = 1, fullrange = TRUE) +
+  scale_color_manual(values = c("#0d3b66", "#c1121f"), name = "Gaze towards:") +
+  scale_fill_manual(values = c("#0d3b66", "#c1121f"), name = "Gaze towards:") +
+  labs(x = "Proportion of looking time during feedback", y = "Subjective regret") 
+  
+  
+```
+
+## PLOT 3
+
+### Processing
+
+```{r}
+trial_next <- data_aoi %>%
+  filter(type == "feedback", aoi_tree %in% c("tree_1","tree_2","tree_3")) %>%
+  mutate(choice = case_when(
+    choice == 564  ~ 1L,
+    choice == 864  ~ 2L,
+    choice == 1164 ~ 3L,
+    TRUE           ~ NA_integer_
+  )) %>%
+  distinct(pid, trial_index, choice) %>%        # <-- collapse to one row per trial
+  arrange(pid, trial_index) %>%
+  group_by(pid) %>%
+  mutate(next_choice = lead(choice)) %>%        # <-- now it's trial-wise
+  ungroup()
+
+# 2) Join next_choice back to the row-level data
+trial_summ <- data_aoi %>%
+  filter(type == "feedback", aoi_tree %in% c("tree_1","tree_2","tree_3")) %>%
+  mutate(aoi_rank = recode(aoi_tree, tree_1 = 1L, tree_2 = 2L, tree_3 = 3L),
+         choice = case_when(
+           choice == 564  ~ 1L,
+           choice == 864  ~ 2L,
+           choice == 1164 ~ 3L,
+           TRUE           ~ NA_integer_
+         )) %>%
+  left_join(trial_next %>% select(pid, trial_index, next_choice),
+            by = c("pid","trial_index")) |>
+  mutate(look_nextchoice = ifelse(aoi_rank == next_choice, 1, 0)) %>%
+  group_by(pid, trial_index) %>%
+  mutate(total_fix_duration = sum(fix_duration, na.rm = TRUE), .groups = "drop") %>%
+  ungroup() %>% 
+  group_by(pid, trial_index, look_nextchoice) %>%
+  mutate(prop_fix = sum(fix_duration) / total_fix_duration) %>%
+  ungroup() 
+```
+
+```{r}
+per_tree <- data_aoi %>%
+  filter(type == "feedback", aoi_tree %in% c("tree_1","tree_2","tree_3")) %>%
+  mutate(
+    aoi_rank = recode(aoi_tree, tree_1 = 1L, tree_2 = 2L, tree_3 = 3L)
+  ) %>%
+  group_by(pid, trial_index, aoi_rank) %>%
+  mutate(dwell = sum(fix_duration, na.rm = TRUE), .groups = "drop") %>%
+  ungroup() |>
+  group_by(pid, trial_index) %>%
+  mutate(
+    dwell_total = sum(dwell, na.rm = TRUE),
+    prop_dwell  = ifelse(dwell_total > 0, dwell / dwell_total, NA_real_)
+  ) %>%
+  ungroup() %>%
+  # add next_choice (1/2/3) computed earlier in `trial_next`
+  left_join(trial_next %>% select(pid, trial_index, next_choice),
+            by = c("pid","trial_index")) %>%
+  filter(!is.na(next_choice), !is.na(prop_dwell)) %>%
+  mutate(is_next = as.integer(aoi_rank == next_choice))
+```
+
+### Plot
+
+```{r}
+# plot
+per_tree %>%
+  filter(points == 0) |>
+  mutate(choice = case_when(
+    choice == 564 ~ "1",
+    choice == 864 ~ "2",
+    choice == 1164 ~ "3")) |>
+  mutate(same = ifelse(next_choice == choice, 1, 0)) |>
+  ggplot(aes(prop_dwell, is_next)) +
+  geom_point() +
+  stat_smooth(method = "glm",
+              method.args = list(family = binomial), se = TRUE, fullrange = TRUE) +
+  labs(x = "Looking at tree during feedback", y = "P(choosing tree on next trial)") 
+  
+```
+
+
+# Exploratory analyses below
+
+## Choice gaze dynamics
+
+### Sanity check that people are looking at what they are choosing
+
+
 
 ```{r}
 # plotting saccades by choice
@@ -100,9 +339,17 @@ data |>
 
 ```{r}
 # fixations
-data |> 
+trial_summ |> 
   filter(type == "feedback") |>
   mutate(half = ifelse(trial_index <= 30, "first", "second")) |>
+  group_by(pid, trial_index) %>%
+  mutate(total_fix_duration = sum(fix_duration, na.rm = TRUE), .groups = "drop") %>%
+  ungroup() %>% 
+  
+  # compute proportion of total fixation time
+  group_by(pid, trial_index, aoi_rank) %>%
+  mutate(prop_fix = sum(fix_duration) / total_fix_duration) %>%
+  ungroup() |>
   ggplot(aes(x = choice_goodbad, y = fix_duration, color = choice_goodbad, fill = choice_goodbad)) +
   
   # stat_dots(
@@ -151,6 +398,7 @@ data |>
         panel.grid.minor.x = element_blank()) +
   facet_wrap(~ points)
 ```
+
 ```{r}
 # fixations
 data |> 
@@ -327,125 +575,24 @@ data |>
 
 ## Gaze towards alternative options
 
+
+
 ```{r}
-# gaze dynamics; red line = location of where a participant is looking; blue = location of chosen tree
-data |>
-  filter(pid == 734722) |>
-  filter(type == "choice") |>
-  mutate(choice = case_when(
-    choice == 1 ~ 564,
-    choice == 2 ~ 864,
-    choice == 3 ~ 1164
-  )) |>
-  ggplot(aes(x = trial_index)) +
-  stat_smooth(method = "loess", aes(y = fix_genx), color = "#c1121f", span = 0.5) +
-  stat_smooth(method = "loess", aes(y = choice), color = "#003049", span = 0.5) +
-  labs(x = "Trial", y = "X-coordinate",
-       title = "Gaze dynamics during choice phase across trials") 
-```
-```{r}
-# ---- parameters you can tweak ----
-screen_w <- 1728; screen_h <- 1080
-centers  <- tibble(tree = paste0("tree_", 1:3),
-                   x_c = c(564, 864, 1164),
-                   y_c = 540)
-
-# Rectangular AOI size (width x height in px)
-aoi_w <- 300
-aoi_h <- 400
-
-# Circular AOI radius (px)
-aoi_r <- 170
-
-# ---- build AOI definitions ----
-aoi_rect <- centers %>%
-  mutate(xmin = pmax(0, x_c - aoi_w/2),
-         xmax = pmin(screen_w, x_c + aoi_w/2),
-         ymin = pmax(0, y_c - aoi_h/2),
-         ymax = pmin(screen_h, y_c + aoi_h/2))
-
-aoi_circ <- centers %>%
-  mutate(r = aoi_r)
-
-# Helper: point-in-rectangle
-in_rect <- function(x, y, xmin, xmax, ymin, ymax) {
-  x >= xmin & x <= xmax & y >= ymin & y <= ymax
-}
-
-# Helper: point-in-circle
-in_circ <- function(x, y, x_c, y_c, r) {
-  (x - x_c)^2 + (y - y_c)^2 <= r^2
-}
-
-# ---- classify gaze samples to AOI (rectangular version) ----
-# expects columns: pid, trial_index (or trial), x, y, type, choice, tree_1, tree_2, tree_3
-data_aoi <- data %>%
-  filter(type == "feedback") %>%
-  # your existing mapping of centers
-  mutate(choice = case_when(
-           choice == 1 ~ 564,
-           choice == 2 ~ 864,
-           choice == 3 ~ 1164
-         ),
-         best_tree_coord = case_when(tree_1 == 0.7 ~ 564,
-                                     tree_2 == 0.7 ~ 864,
-                                     tree_3 == 0.7 ~ 1164),
-         medium_tree_coord = case_when(tree_1 == 0.5 ~ 564,
-                                       tree_2 == 0.5 ~ 864,
-                                       tree_3 == 0.5 ~ 1164),
-         worst_tree_coord = case_when(tree_1 == 0.2 ~ 564,
-                                      tree_2 == 0.2 ~ 864,
-                                      tree_3 == 0.2 ~ 1164)) %>%
-  mutate(x = fix_genx,
-         y = fix_geny) %>%
-  # compute rect AOI membership
-  rowwise() %>%
-  mutate(
-    in_tree_1 = in_rect(x, y,
-                        xmin = aoi_rect$xmin[aoi_rect$tree=="tree_1"],
-                        xmax = aoi_rect$xmax[aoi_rect$tree=="tree_1"],
-                        ymin = aoi_rect$ymin[aoi_rect$tree=="tree_1"],
-                        ymax = aoi_rect$ymax[aoi_rect$tree=="tree_1"]),
-    in_tree_2 = in_rect(x, y,
-                        xmin = aoi_rect$xmin[aoi_rect$tree=="tree_2"],
-                        xmax = aoi_rect$xmax[aoi_rect$tree=="tree_2"],
-                        ymin = aoi_rect$ymin[aoi_rect$tree=="tree_2"],
-                        ymax = aoi_rect$ymax[aoi_rect$tree=="tree_2"]),
-    in_tree_3 = in_rect(x, y,
-                        xmin = aoi_rect$xmin[aoi_rect$tree=="tree_3"],
-                        xmax = aoi_rect$xmax[aoi_rect$tree=="tree_3"],
-                        ymin = aoi_rect$ymin[aoi_rect$tree=="tree_3"],
-                        ymax = aoi_rect$ymax[aoi_rect$tree=="tree_3"]),
-    aoi_tree = case_when(
-      in_tree_1 ~ "tree_1",
-      in_tree_2 ~ "tree_2",
-      in_tree_3 ~ "tree_3",
-      TRUE      ~ "none"
-    )
-  ) %>%
-  ungroup() %>%
-  # optional: nearest tree by Euclidean distance (useful when a point is in none/overlaps)
-  mutate(
-    dist_t1 = sqrt((x - 564)^2  + (y - 540)^2),
-    dist_t2 = sqrt((x - 864)^2  + (y - 540)^2),
-    dist_t3 = sqrt((x - 1164)^2 + (y - 540)^2)
-  )
-
+trial_summ |>
+  filter(points == 0) |>
+  ggplot(aes(y = prop_fix, x = look_nextchoice)) +
+  stat_smooth(method = "lm", size = 1) +
+  stat_cor()
 ```
 
+
 ```{r}
-trial_summ <- data_aoi %>%
-  filter(type == "feedback", aoi_tree %in% c("tree_1","tree_2","tree_3")) %>%
-  mutate(aoi_rank = recode(aoi_tree, tree_1="worst", tree_2="medium", tree_3="best"),
-         chosen_rank = choice_goodbad) %>%
-  group_by(pid, trial_index, chosen_rank) %>%
-  mutate(p_best   = mean(aoi_rank == "best"),
-            p_medium = mean(aoi_rank == "medium"),
-            p_worst  = mean(aoi_rank == "worst"))
+newdat <- data.frame(prop_dwell = seq(0, 1, length.out = 200))
+newdat$pred <- predict(m, newdat, type = "response")
 
-
-ggplot(trial_summ, aes(x = p_best, y = regret)) +
-  geom_smooth(method = "lm") +
-  facet_wrap(~ choice_goodbad)
-  
+ggplot(per_tree, aes(fix_duration, is_next)) +
+  geom_jitter(height = 0.05, alpha = 0.2) +
+  geom_line(data = newdat, aes(prop_dwell, pred), color = "red", size = 1.2) +
+  labs(x = "Proportion of looking time during feedback",
+       y = "P(select tree next)")
 ```
