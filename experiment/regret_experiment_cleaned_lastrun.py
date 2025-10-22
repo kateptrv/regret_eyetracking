@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 This experiment was created using PsychoPy3 Experiment Builder (v2024.2.4),
-    on Wed Aug 13 16:20:26 2025
+    on Wed Oct 22 11:56:13 2025
 If you publish work using this script the most relevant publication is:
 
     Peirce J, Gray JR, Simpson S, MacAskill M, Höchenberger R, Sogo H, Kastman E, Lindeløv JK. (2019) 
@@ -132,7 +132,7 @@ def setupData(expInfo, dataDir=None):
     thisExp = data.ExperimentHandler(
         name=expName, version='',
         extraInfo=expInfo, runtimeInfo=None,
-        originPath='/Users/anhthudang/Downloads/Piloting Eyetracking/regret_eyetracking/experiment/regret_experiment_cleaned_lastrun.py',
+        originPath='/Users/katepetrova/Library/CloudStorage/GoogleDrive-kpetrova@stanford.edu/Shared drives/SPL_Kate Petrova/regret/regret_eyetracking/experiment/regret_experiment_cleaned_lastrun.py',
         savePickle=True, saveWideText=True,
         dataFileName=dataDir + os.sep + filename, sortColumns='time'
     )
@@ -250,24 +250,12 @@ def setupDevices(expInfo, thisExp, win):
     ioConfig = {}
     
     # Setup eyetracking
-    ioConfig['eyetracker.eyelink.EyeTracker'] = {
+    ioConfig['eyetracker.hw.mouse.EyeTracker'] = {
         'name': 'tracker',
-        'model_name': 'EYELINK 1000 DESKTOP',
-        'simulation_mode': False,
-        'network_settings': '100.1.1.1',
-        'default_native_data_file_name': 'EXPFILE',
-        'runtime_settings': {
-            'sampling_rate': 1000.0,
-            'track_eyes': 'BOTH',
-            'sample_filtering': {
-                'FILTER_FILE': 'FILTER_LEVEL_2',
-                'FILTER_ONLINE': 'FILTER_LEVEL_OFF',
-            },
-            'vog_settings': {
-                'pupil_measure_types': 'PUPIL_AREA',
-                'tracking_mode': 'PUPIL_CR_TRACKING',
-                'pupil_center_algorithm': 'ELLIPSE_FIT',
-            }
+        'controls': {
+            'move': [],
+            'blink':('MIDDLE_BUTTON',),
+            'saccade_threshold': 0.5,
         }
     }
     
@@ -415,9 +403,8 @@ def run(expInfo, thisExp, win, globalClock=None, thisSession=None):
     # -------------------
     # Participant-level settings
     # -------------------
-    # 0 = No-Regret, 1 = Regret-First-30
-    #participant_cond = random.choice([0, 1])
-    participant_cond = 1
+    # 0 = No-Regret, 1 = Regret-First-30, 2 = Regret-Last-30
+    participant_cond = random.choice([0, 1, 2])
     
     # Randomize prob assignment to LEFT / UP / RIGHT once for this participant
     PROBS = [0.2, 0.5, 0.7]
@@ -1447,7 +1434,7 @@ def run(expInfo, thisExp, win, globalClock=None, thisSession=None):
         # participant_cond == 1 (Regret-First-30) AND
         # trial_num <= 30 AND
         # points == 0 (just lost)
-        skip_regret = not (participant_cond == 1 and trial_num <= 30 and points == 0)
+        skip_regret = not ((participant_cond == 1 and trial_num <= 30 and points == 0) or (participant_cond == 2 and trial_num > 30 and points == 0))
         if skip_regret:
             continueRoutine = False
             # We'll pre-log NA so each trial row has something
