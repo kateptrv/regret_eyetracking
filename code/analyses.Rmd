@@ -16,7 +16,11 @@ p_load(tidyverse, tidyr, dplyr, ggplot2, stats, sjPlot, readr, ggpubr, patchwork
 
 ```{r}
 data <- read_csv("../data/data_merged.csv", show_col_types = FALSE) |>
+<<<<<<< HEAD
   dplyr::filter(pid != 33928 & pid != 34108 & pid != 33835)
+=======
+  dplyr::filter(pid != 33928 & pid != 33706 & pid != 34108 & pid != 33835) # excluding based on session notes
+>>>>>>> 39afc365c96ee60392c61c32ac10a75ee11a88f0
   
 ```
 
