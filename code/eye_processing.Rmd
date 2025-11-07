@@ -141,41 +141,39 @@ ggplot(aes(x = sac_genx, y = sac_geny, size = sac_duration, color = type)) +
 # Whole sample
 
 ```{r}
+# --- collect EDFs ---
 edf_files <- list.files("../experiment/data", pattern = "\\.EDF$", full.names = TRUE)
 edf_files <- edf_files[file.info(edf_files)$size > 10000]
 
-get_pid <- function(path) str_extract(basename(path), "^\\d{6}")
+get_pid <- function(path) str_extract(basename(path), "^\\d{5}")
 
 process_edf <- function(path) {
-  pid <- get_pid(path)
-
+  pid  <- get_pid(path)
   test <- read_edf(path)
 
-  # --- messages ---
+  # --- messages (labels) ---
   msg <- as.data.table(test$events)[
     type == "MESSAGEEVENT" & grepl("^(FIX|CHOICE|FEEDBACK|REGRET)", message),
     .(msg_time = sttime_rel, label = message)
-  ]
+  ][order(msg_time)]
 
-  # use dplyr/tidyr to parse labels, then convert back to data.table
   msg <- msg |>
     mutate(
       trial_num = as.numeric(str_extract(label, "\\d+")),
       type = case_when(
-        grepl("^FIX", label) ~ "fixation",
-        grepl("^CHOICE", label) ~ "choice",
+        grepl("^FIX",      label) ~ "fixation",
+        grepl("^CHOICE",   label) ~ "choice",
         grepl("^FEEDBACK", label) ~ "feedback",
-        grepl("^REGRET", label) ~ "regret",
+        grepl("^REGRET",   label) ~ "regret",
         TRUE ~ NA_character_
       )
     ) |>
-    arrange(msg_time) |>
     fill(type, trial_num, .direction = "down") |>
     as.data.table()
 
-  # add join keys
-  msg[, `:=`(start = msg_time, end = msg_time)]
-  setkey(msg, start, end)
+  # Join key (only start). We don't need an 'end' for msg.
+  msg[, start := msg_time]
+  setkey(msg, start)
 
   # --- saccades ---
   sac <- as.data.table(test$saccades)[, .(
@@ -184,7 +182,7 @@ process_edf <- function(path) {
     sac_duration = duration
   )]
   sac[, `:=`(start = sac_sttime_rel, end = sac_entime_rel)]
-  setkey(sac, start, end)
+  setkey(sac, start)
 
   # --- fixations ---
   fix <- as.data.table(test$fixations)[, .(
@@ -193,34 +191,43 @@ process_edf <- function(path) {
     fix_duration = duration
   )]
   fix[, `:=`(start = fix_sttime_rel, end = fix_entime_rel)]
-  setkey(fix, start, end)
+  setkey(fix, start)
 
-  # --- rolling overlap joins: msg → sac → fix ---
-  # First label saccades with nearest msg, then fixations with nearest of that result
-  sac_labeled <- sac[msg, roll = TRUE]
-  labeled     <- fix[sac_labeled, roll = TRUE]
+  # --- rolling joins (same order as working single-file code) ---
+  # Label saccades by most recent prior message, then label fixations from that.
+  sac_labeled <- msg[sac,  on = .(start), roll = TRUE]
+  labeled     <- sac_labeled[fix, on = .(start), roll = TRUE]
 
-  # keep only rows that got a message label, and attach pid
+  # keep only rows that inherited a message label
   out <- labeled[!is.na(msg_time)]
-  out[, pid := as.numeric(pid)]
 
-  # ensure trial_num survived (if not, bring from msg columns)
-  # already included via join; just sanity-check
+  # attach pid (keep as character to preserve leading zeros)
+  out[, pid := pid]
+
+  # create trial_index from trial_num and drop trial_num if you don't need it
   if (!"trial_num" %in% names(out)) out[, trial_num := NA_integer_]
+  out[, trial_index := trial_num][, trial_num := NULL]
+
+  # optional tidy: drop helper columns you don't need from joins
+  # (keep timing columns if they're useful for later overlap logic)
+  # Here we keep them.
 
   return(out[])
 }
 
+# --- run over all EDFs and combine ---
 data_eye_processed <- rbindlist(lapply(edf_files, process_edf), fill = TRUE)
 
-# drop safely (only if present)
-if ("msg_time" %in% names(data_eye_processed)) data_eye_processed[, msg_time := NULL]
+# drop msg_time if you don't need it downstream
+if ("msg_time" %in% names(data_eye_processed)) {
+  data_eye_processed[, msg_time := NULL]
+}
 
-# create trial_index and drop trial_num
-if (!"trial_num" %in% names(data_eye_processed)) data_eye_processed[, trial_num := NA_integer_]
-data_eye_processed[, trial_index := trial_num][, trial_num := NULL]
+# ensure trial_index exists (safety) and reorder columns
+if (!"trial_index" %in% names(data_eye_processed)) {
+  data_eye_processed[, trial_index := NA_integer_]
+}
 
-# put pid and trial_index first
 setcolorder(
   data_eye_processed,
   c("pid", "trial_index", setdiff(names(data_eye_processed), c("pid","trial_index")))

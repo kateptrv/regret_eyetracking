@@ -24,7 +24,7 @@ csv_files <- csv_files[file.info(csv_files)$size > 1000]
 
 # get PIDs from csv files
 get_pid <- function(path) {
-  str_extract(basename(path), "^\\d{6}")
+  str_extract(basename(path), "^\\d{5}")
 }
 
 # --- 3. Columns to coerce for consistent types ---
@@ -47,7 +47,7 @@ data_exp_raw <- map_dfr(csv_files, function(path) {
 
 # removing unnecessary variables; renaming, creating new variables
 data_exp_processed <- data_exp_raw |>
-  select(pid, `participant_cond...77`, trial_num, choice_key, choice_rt, choice_prob, points, regret_rating, regret_rt, `prob_left...78`, `prob_up...79`, `prob_right...80`) |>
+  dplyr::select(pid, `participant_cond...77`, trial_num, choice_key, choice_rt, choice_prob, points, regret_rating, regret_rt, `prob_left...78`, `prob_up...79`, `prob_right...80`) |>
   rename(
     condition = `participant_cond...77`,
     trial_index = trial_num,
@@ -57,13 +57,17 @@ data_exp_processed <- data_exp_raw |>
     tree_2 = `prob_up...79`,
     tree_3 = `prob_right...80`
   ) |>
-  filter(!is.na(trial_index)) |>
+  dplyr::filter(!is.na(trial_index)) |>
   mutate(choice = case_when(
     choice == "left" ~ 1,
     choice == "up" ~ 2,
     choice == "right" ~ 3
   ),
-  condition = ifelse(condition == 0, "control", "regret")) |>
+  condition = case_when(
+    is.na(condition) ~ "control",
+    condition == 1 ~ "early_regret",
+    condition == 2 ~ "late_regret"
+  )) |>
   mutate(totalpoints = cumsum(points)) |>
   mutate(final_points = last(totalpoints, order_by = trial_index)) |>
   mutate(tree_best = case_when(
@@ -83,6 +87,7 @@ data_exp_processed <- data_exp_raw |>
     choice == tree_medium ~ "medium",
     choice == tree_worst ~ "worst"
   )) |>
+  mutate(pid = as.numeric(pid)) 
   mutate(pid = as.numeric(pid)) 
 ```
 
@@ -108,8 +113,7 @@ data_merged <-
   data_exp_processed |>
   group_by(pid, trial_index) |>
   inner_join(data_eye_processed, by = c("pid", "trial_index")) |>
-  ungroup() |>
-  relocate(type_lab, .after = trial_index) 
+  ungroup()
   
 ```
 

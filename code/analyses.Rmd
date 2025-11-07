@@ -16,7 +16,7 @@ p_load(tidyverse, tidyr, dplyr, ggplot2, stats, sjPlot, readr, ggpubr, patchwork
 
 ```{r}
 data <- read_csv("../data/data_merged.csv", show_col_types = FALSE) |>
-  dplyr::filter(pid != 33928 & pid != 33706 & pid != 34108 & pid != 33835)
+  dplyr::filter(pid != 33928 & pid != 34108 & pid != 33835)
   
 ```
 
@@ -77,8 +77,7 @@ data %>%
   stat_density_2d(
     geom = "polygon",
     alpha = 0.2,
-    fill = "#c1121f",
-    adjust = c(0.5, 0.5)
+    fill = "#c1121f"
   ) +
   labs(x = "Gaze during choice (x)", y = "Gaze during choice (y)") +
   # remove x axis labels
@@ -221,6 +220,7 @@ trial_summ |>
   
 ```
 
+
 ## PLOT 3
 
 ### Processing
@@ -268,7 +268,7 @@ per_tree <- data_aoi %>%
     aoi_rank = recode(aoi_tree, tree_1 = 1L, tree_2 = 2L, tree_3 = 3L)
   ) %>%
   group_by(pid, trial_index, aoi_rank) %>%
-  mutate(dwell = sum(fix_duration, na.rm = TRUE), .groups = "drop") %>%
+  mutate(dwell = sum(fix_duration, na.rm = TRUE)) %>%
   ungroup() |>
   group_by(pid, trial_index) %>%
   mutate(
@@ -279,7 +279,7 @@ per_tree <- data_aoi %>%
   # add next_choice (1/2/3) computed earlier in `trial_next`
   left_join(trial_next %>% select(pid, trial_index, next_choice),
             by = c("pid","trial_index")) %>%
-  filter(!is.na(next_choice), !is.na(prop_dwell)) %>%
+  dplyr::filter(!is.na(next_choice), !is.na(prop_dwell)) %>%
   mutate(is_next = as.integer(aoi_rank == next_choice))
 ```
 
@@ -299,6 +299,53 @@ per_tree %>%
   stat_smooth(method = "glm",
               method.args = list(family = binomial), se = TRUE, fullrange = TRUE) +
   labs(x = "Looking at tree during feedback", y = "P(choosing tree on next trial)") 
+  
+```
+
+# Behavioral analyses
+
+```{r}
+data_beh <- data |>
+  select(pid, condition, trial_index, choice_prob, points, regret, totalpoints, choice_goodbad) |>
+  distinct()
+
+data_short <- data_beh |>
+  group_by(pid) |>
+  mutate(total_expected_value = sum(choice_prob),
+         avg_regret = mean(regret, na.rm = TRUE)) |>
+  ungroup() |>
+  select(pid, condition, total_expected_value, avg_regret) |>
+  distinct()
+```
+
+```{r}
+data_short |>
+ggplot(aes(x = condition, y = total_expected_value, fill = condition, color = condition)) +
+  geom_point() +
+  stat_summary(
+    fun.data = mean_cl_boot, conf.int = .95, B = 5000,
+    geom = "pointrange", linewidth = 1, size = 1,
+    shape = 21,
+    position = position_nudge(x = -.1)  
+  ) +
+  
+  labs(x = "Condition", y = "Total Expected Value") +
+  theme(legend.position = "none") 
+```
+
+```{r}
+data_beh |>
+  ggplot(aes(x = trial_index, y = regret, color = condition)) +
+  geom_smooth(method = "loess", span = 0.25) +
+  labs(x = "Trial Index",
+       y = "Subjective regret")
+
+data_beh |>
+  ggplot(aes(x = choice_goodbad, y = regret)) +
+  geom_bar(stat = "summary", fun = "mean", position = position_dodge()) +
+  labs(x = "Choice type",
+       y = "Subjective regret") +
+  facet_wrap(~ condition)
   
 ```
 
@@ -486,7 +533,7 @@ data |>
 ```{r}
 data |>
   dplyr::filter(type == "choice") |>
-  ggplot(aes(regret, sac_duration)) +
+  ggplot(aes(fix_duration, regret)) +
   #geom_smooth(method = "lm", color = "black", size = 1) +
   geom_point(aes(color = regret), alpha = 0.5) +
   # stat_dots(
@@ -496,11 +543,6 @@ data |>
   #   linewidth = 0.5,
   #   alpha = 1
   # ) +
-  stat_summary(
-    fun.data = mean_cl_boot, conf.int = .95, B = 5000,
-    geom = "pointrange", linewidth = 1, size = 1,
-    shape = 21 
-  ) +
   labs(x = "Regret", y = "Saccades") +
   theme(legend.position = "none") +
   theme(panel.grid.major.x = element_blank(),
@@ -512,7 +554,7 @@ data |>
 ```{r}
 data |>
   dplyr::filter(type == "feedback") |>
-  ggplot(aes(regret, sac_duration)) +
+  ggplot(aes(regret, fix_duration)) +
   geom_smooth(method = "lm", color = "black", size = 1) +
   # stat_dots(
   #   side = "right",
@@ -552,10 +594,10 @@ data |>
 ```{r}
 data |>
   dplyr::filter(type == "choice") |>
-  ggplot(aes(x = fix_duration, y = choice_rt)) +
+  ggplot(aes(x = regret_rt, y = regret)) +
   geom_smooth(method = "lm", color = "black", size = 1) +
   geom_point(aes(color = regret), alpha = 0.5) +
-  labs(x = "Regret", y = "Reaction time (ms)") +
+  labs(x = "Regret rt", y = "Regret") +
   theme(legend.position = "none") +
   theme(panel.grid.major.x = element_blank(),
         panel.grid.minor.x = element_blank())
