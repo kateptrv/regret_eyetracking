@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" ?>
-<PsychoPy2experiment encoding="utf-8" version="2024.2.4">
+<PsychoPy2experiment encoding="utf-8" version="2025.1.1">
   <Settings>
     <Param val="3" valType="str" updates="None" name="Audio latency priority"/>
     <Param val="ptb" valType="str" updates="None" name="Audio lib"/>
@@ -17,7 +17,7 @@
     <Param val="[]" valType="list" updates="None" name="Resources"/>
     <Param val="False" valType="bool" updates="None" name="Save csv file"/>
     <Param val="False" valType="bool" updates="None" name="Save excel file"/>
-    <Param val="False" valType="bool" updates="None" name="Save hdf5 file"/>
+    <Param val="True" valType="bool" updates="None" name="Save hdf5 file"/>
     <Param val="True" valType="bool" updates="None" name="Save log file"/>
     <Param val="True" valType="bool" updates="None" name="Save psydat file"/>
     <Param val="True" valType="bool" updates="None" name="Save wide csv file"/>
@@ -26,7 +26,7 @@
     <Param val="False" valType="bool" updates="None" name="Show mouse"/>
     <Param val="height" valType="str" updates="None" name="Units"/>
     <Param val="" valType="str" updates="None" name="Use version"/>
-    <Param val="[1440, 900]" valType="list" updates="None" name="Window size (pixels)"/>
+    <Param val="[1600, 1200]" valType="list" updates="None" name="Window size (pixels)"/>
     <Param val="none" valType="str" updates="None" name="backgroundFit"/>
     <Param val="" valType="str" updates="None" name="backgroundImg"/>
     <Param val="avg" valType="str" updates="None" name="blendMode"/>
@@ -47,8 +47,9 @@
     <Param val="BOTH" valType="str" updates="None" name="elTrackEyes"/>
     <Param val="PUPIL_CR_TRACKING" valType="str" updates="None" name="elTrackingMode"/>
     <Param val="regret_experiment" valType="str" updates="None" name="expName"/>
+    <Param val="" valType="str" updates="None" name="expVersion"/>
     <Param val="manually" valType="str" updates="None" name="exportHTML"/>
-    <Param val="SR Research Ltd" valType="str" updates="None" name="eyetracker"/>
+    <Param val="eyetracker.eyelink.EyeTracker" valType="str" updates="None" name="eyetracker"/>
     <Param val="" valType="code" updates="None" name="frameRate"/>
     <Param val="Attempting to measure frame rate of screen, please wait..." valType="str" updates="None" name="frameRateMsg"/>
     <Param val="127.0.0.1" valType="str" updates="None" name="gpAddress"/>
@@ -73,6 +74,18 @@
     <Param val="1" valType="code" updates="None" name="runMode"/>
     <Param val="False" valType="bool" updates="None" name="rush"/>
     <Param val="time" valType="str" updates="None" name="sortColumns"/>
+    <Param val="False" valType="bool" updates="None" name="srEnableInterfaceWithoutConnection"/>
+    <Param val="FILTER_LEVEL_OFF" valType="str" updates="None" name="srFileSampleFiltering"/>
+    <Param val="FILTER_LEVEL_OFF" valType="str" updates="None" name="srLiveSampleFiltering"/>
+    <Param val="EYELINK 1000 DESKTOP" valType="str" updates="None" name="srModelName"/>
+    <Param val="et_data" valType="str" updates="None" name="srNativeDataFileName"/>
+    <Param val="100.1.1.1" valType="str" updates="None" name="srNetIP4Address"/>
+    <Param val="250" valType="str" updates="None" name="srSamplingRate"/>
+    <Param val="False" valType="bool" updates="None" name="srSimulationMode"/>
+    <Param val="BOTH" valType="str" updates="None" name="srTrackEyes"/>
+    <Param val="ELLIPSE_FIT" valType="str" updates="None" name="srVOGPupilCenterAlgorithm"/>
+    <Param val="PUPIL_AREA" valType="str" updates="None" name="srVOGPupilMeasureTypes"/>
+    <Param val="PUPIL_CR_TRACKING" valType="str" updates="None" name="srVOGTrackingMode"/>
     <Param val="" valType="str" updates="None" name="tbLicenseFile"/>
     <Param val="" valType="str" updates="None" name="tbModel"/>
     <Param val="60" valType="num" updates="None" name="tbSampleRate"/>
